@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id          String   @id @default("singleton")
+  name        String   @default("Ahsan Burki")
+  location    String   @default("Waziristan, Pakistan")
+  degree      String   @default("BS in Artificial Intelligence")
+  gradDate    DateTime @default("2026-06-21T00:00:00.000Z")
+  cvUrl       String?
+  germanLevel String   @default("A2")
+  bio         String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String?
+  techStack   String
+  liveUrl     String?
+  repoUrl     String?
+  featured    Boolean  @default(false)
+  category    String   @default("web")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  senderName  String
+  senderEmail String
+  content     String
+  receivedAt  DateTime @default(now())
+  isRead      Boolean  @default(false)
+}
+
+model Asset {
+  id        String   @id @default(cuid())
+  filename  String
+  filepath  String
+  fileType  String
+  fileSize  Int
+  category  String   @default("general")
+  createdAt DateTime @default(now())
+}
+
+model DownloadLog {
+  id         String   @id @default(cuid())
+  filename   String
+  ipHash     String
+  downloadAt DateTime @default(now())
+}
+
+model AdminUser {
+  id       String @id @default(cuid())
+  username String @unique
+  password String
+}
