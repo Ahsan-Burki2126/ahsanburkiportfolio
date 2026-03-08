@@ -31,6 +31,8 @@ export default function ProjectsPanel({ token }: { token: string }) {
   const [form, setForm] = useState(emptyProject);
   const [editing, setEditing] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([
     "web",
     "ai",
@@ -106,6 +108,32 @@ export default function ProjectsPanel({ token }: { token: string }) {
     await saveCategories(categories.filter((c) => c !== cat));
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be under 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setForm((prev) => ({ ...prev, imageUrl: result }));
+      setImagePreview(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setForm((prev) => ({ ...prev, imageUrl: "" }));
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const fetchProjects = useCallback(() => {
     setLoading(true);
     fetch("/api/projects")
@@ -139,6 +167,8 @@ export default function ProjectsPanel({ token }: { token: string }) {
 
     setForm(emptyProject);
     setEditing(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     fetchProjects();
   };
 
@@ -154,6 +184,8 @@ export default function ProjectsPanel({ token }: { token: string }) {
       repoUrl: project.repoUrl || "",
       featured: project.featured,
     });
+    setImagePreview(project.imageUrl || null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setTimeout(
       () =>
         formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
@@ -267,6 +299,49 @@ export default function ProjectsPanel({ token }: { token: string }) {
           </div>
         </div>
 
+        {/* Image Upload */}
+        <div className="space-y-2">
+          <label className="text-[10px] tracking-widest text-[var(--text-secondary)]">
+            PROJECT IMAGE
+          </label>
+          <div className="flex items-start gap-4">
+            {imagePreview ? (
+              <div className="relative w-32 h-20 rounded border border-[var(--border-color)] overflow-hidden shrink-0">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-1 right-1 w-5 h-5 bg-red-500/80 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-500 transition-colors cursor-pointer"
+                >
+                  &times;
+                </button>
+              </div>
+            ) : (
+              <div className="w-32 h-20 rounded border border-dashed border-[var(--border-color)] flex items-center justify-center shrink-0">
+                <span className="text-[var(--text-secondary)] text-[9px] tracking-wider">
+                  NO IMAGE
+                </span>
+              </div>
+            )}
+            <div className="flex-1 space-y-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="w-full text-xs text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-[var(--border-color)] file:bg-[var(--bg-secondary)] file:text-[var(--text-secondary)] file:text-[9px] file:tracking-wider file:cursor-pointer hover:file:border-[var(--accent-cyan)] hover:file:text-[var(--accent-cyan)]"
+              />
+              <p className="text-[9px] text-[var(--text-secondary)]">
+                Max 5MB. JPG, PNG, WebP, GIF.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -294,6 +369,8 @@ export default function ProjectsPanel({ token }: { token: string }) {
               onClick={() => {
                 setEditing(null);
                 setForm(emptyProject);
+                setImagePreview(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
               }}
               className="px-6 py-2 border border-[var(--border-color)] text-[var(--text-secondary)] text-[10px] tracking-widest rounded hover:border-red-500/30 hover:text-red-400 transition-colors"
             >
@@ -360,6 +437,21 @@ export default function ProjectsPanel({ token }: { token: string }) {
               key={project.id}
               className="border border-[var(--border-color)] rounded-lg p-4 bg-[var(--bg-card)] flex items-center justify-between gap-4"
             >
+              {project.imageUrl ? (
+                <div className="w-12 h-12 rounded border border-[var(--border-color)] overflow-hidden shrink-0">
+                  <img
+                    src={project.imageUrl}
+                    alt={project.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded border border-[var(--border-color)] flex items-center justify-center shrink-0 bg-[var(--bg-secondary)]">
+                  <span className="text-[var(--accent-cyan)]/30 text-lg font-bold">
+                    {project.title.charAt(0)}
+                  </span>
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold truncate">
