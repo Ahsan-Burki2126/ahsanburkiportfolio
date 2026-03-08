@@ -4,12 +4,22 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import ScrollReveal, { StaggerReveal } from "@/components/ScrollReveal";
 import GlitchText from "@/components/GlitchText";
+import { useCmsContent } from "@/lib/useContent";
 
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
   ssr: false,
 });
 
-const timeline = [
+interface TimelineEntry {
+  year: string;
+  title: string;
+  role: string;
+  description: string;
+  tags: string[];
+  type: string;
+}
+
+const defaultTimeline: TimelineEntry[] = [
   {
     year: "2022",
     title: "The Awakening",
@@ -17,7 +27,7 @@ const timeline = [
     description:
       "Left the mountains of Waziristan with a burning curiosity for technology. Enrolled in AI degree, discovered the intersection of code and intelligence.",
     tags: ["Python", "Mathematics", "Linear Algebra"],
-    type: "education" as const,
+    type: "education",
   },
   {
     year: "2023",
@@ -26,7 +36,7 @@ const timeline = [
     description:
       "Built first machine learning models, developed web applications using React and Flask. Started exploring computer vision and NLP fundamentals.",
     tags: ["React", "Flask", "TensorFlow", "Computer Vision"],
-    type: "project" as const,
+    type: "project",
   },
   {
     year: "2023",
@@ -35,7 +45,7 @@ const timeline = [
     description:
       "Conceived and built SafarDost — an AI-powered travel companion to showcase Pakistan's hidden gems. Integrated intelligent recommendations, dynamic routing, and immersive UI.",
     tags: ["Next.js", "AI Agents", "Maps API", "Full-Stack"],
-    type: "project" as const,
+    type: "project",
   },
   {
     year: "2024",
@@ -44,7 +54,7 @@ const timeline = [
     description:
       "Specialized in building autonomous AI agents. Developed custom frameworks for multi-agent orchestration, prompt engineering, and tool-use architectures.",
     tags: ["LangChain", "GPT-4", "Agent Framework", "RAG"],
-    type: "research" as const,
+    type: "research",
   },
   {
     year: "2024",
@@ -53,7 +63,7 @@ const timeline = [
     description:
       "Merged technical skills with creative passion. Built immersive 3D web experiences with Three.js, captured cinematic photography of Pakistan's landscapes.",
     tags: ["Three.js", "Blender", "GSAP", "Photography"],
-    type: "creative" as const,
+    type: "creative",
   },
   {
     year: "2025",
@@ -62,7 +72,7 @@ const timeline = [
     description:
       "Building production-grade AI systems, contributing to open-source, and developing this portfolio as a living experiment in creative coding and modern web architecture.",
     tags: ["Next.js 16", "Prisma", "TypeScript", "LLMs"],
-    type: "present" as const,
+    type: "present",
   },
 ];
 
@@ -77,6 +87,12 @@ const typeColors: Record<string, string> = {
 export default function ExperiencePage() {
   const [quote, setQuote] = useState({ text: "", author: "" });
   const [quoteLoading, setQuoteLoading] = useState(true);
+  const { text, json } = useCmsContent("experience");
+
+  const timeline = json<TimelineEntry[]>(
+    "experience_timeline",
+    defaultTimeline,
+  );
 
   useEffect(() => {
     fetch("/api/quote")
@@ -102,13 +118,15 @@ export default function ExperiencePage() {
               // 04.MISSION_LOG
             </p>
             <GlitchText
-              text="THE JOURNEY"
+              text={text("experience_page_title", "THE JOURNEY")}
               as="h1"
               className="text-3xl md:text-5xl font-bold"
             />
             <p className="text-[var(--text-secondary)] text-sm max-w-lg">
-              A chronological record of pivotal moments, experiments, and
-              milestones in the evolution of an AI systems architect.
+              {text(
+                "experience_page_description",
+                "A chronological record of pivotal moments, experiments, and milestones in the evolution of an AI systems architect.",
+              )}
             </p>
           </div>
         </ScrollReveal>

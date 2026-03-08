@@ -11,6 +11,7 @@ interface AnimatedCounterProps {
   className?: string;
   labelClassName?: string;
   label?: string;
+  style?: React.CSSProperties;
 }
 
 export default function AnimatedCounter({
@@ -21,6 +22,7 @@ export default function AnimatedCounter({
   className = "",
   labelClassName = "",
   label,
+  style,
 }: AnimatedCounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const [hasAnimated, setHasAnimated] = useState(false);
@@ -56,7 +58,7 @@ export default function AnimatedCounter({
 
   return (
     <div className="text-center">
-      <span ref={ref} className={className}>
+      <span ref={ref} className={className} style={style}>
         {prefix}0{suffix}
       </span>
       {label && <p className={labelClassName}>{label}</p>}

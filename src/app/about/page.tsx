@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import ScrollReveal, { StaggerReveal } from "@/components/ScrollReveal";
 import GlitchText from "@/components/GlitchText";
 import TiltCard from "@/components/TiltCard";
+import { useCmsContent } from "@/lib/useContent";
 
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
   ssr: false,
@@ -49,10 +50,65 @@ function useCountdown(targetMs: number): TimeLeft {
 
 const GRAD_DATE_MS = new Date("2026-06-21T00:00:00Z").getTime();
 
+interface EducationInfo {
+  degree: string;
+  gradDate: string;
+  status: string;
+}
+
+interface LanguageItem {
+  name: string;
+  level: string;
+  percent: number;
+}
+
+interface InterestItem {
+  icon: string;
+  label: string;
+}
+
+function renderBioText(text: string) {
+  return text
+    .replace(
+      /<highlight>(.*?)<\/highlight>/g,
+      '<span class="text-[var(--text-primary)]">$1</span>',
+    )
+    .replace(
+      /<cyan>(.*?)<\/cyan>/g,
+      '<span class="text-[var(--accent-cyan)]">$1</span>',
+    )
+    .replace(
+      /<purple>(.*?)<\/purple>/g,
+      '<span class="text-[var(--accent-purple)]">$1</span>',
+    );
+}
+
 export default function AboutPage() {
-  const countdown = useCountdown(GRAD_DATE_MS);
+  const { text, json } = useCmsContent("about");
+  const education = json<EducationInfo>("about_education", {
+    degree: "BS in Artificial Intelligence",
+    gradDate: "2026-06-21T00:00:00Z",
+    status: "IN_PROGRESS",
+  });
+  const gradDateMs = new Date(education.gradDate).getTime() || GRAD_DATE_MS;
+  const countdown = useCountdown(gradDateMs);
   const [scanning, setScanning] = useState(false);
   const scanRef = useRef<HTMLButtonElement>(null);
+
+  const bioParagraphs = json<string[]>("about_bio", []);
+  const languages = json<LanguageItem[]>("about_languages", [
+    { name: "English", level: "Professional", percent: 90 },
+    { name: "Pashto", level: "Native", percent: 100 },
+    { name: "German", level: "A2 / Duolingo", percent: 25 },
+  ]);
+  const interests = json<InterestItem[]>("about_interests", [
+    { icon: "🤖", label: "AI Agents" },
+    { icon: "🧠", label: "Machine Learning" },
+    { icon: "📷", label: "Cinematic Photography" },
+    { icon: "🎨", label: "3D Rendering (Blender)" },
+    { icon: "💻", label: "Creative Coding" },
+    { icon: "🌍", label: "Travel Tech" },
+  ]);
 
   const handleDownloadCV = async () => {
     setScanning(true);
@@ -62,12 +118,6 @@ export default function AboutPage() {
       window.open("/api/cv/download", "_blank");
     }, 2000);
   };
-
-  const languages = [
-    { name: "English", level: "Professional", percent: 90 },
-    { name: "Pashto", level: "Native", percent: 100 },
-    { name: "German", level: "A2 / Duolingo", percent: 25 },
-  ];
 
   return (
     <div className="min-h-screen py-20 px-6 relative">
@@ -79,7 +129,7 @@ export default function AboutPage() {
             // 01.RESEARCH_FILE
           </p>
           <GlitchText
-            text="ABOUT AHSAN"
+            text={text("about_page_title", "ABOUT AHSAN")}
             as="h1"
             className="text-3xl md:text-5xl font-bold"
           />
@@ -94,39 +144,43 @@ export default function AboutPage() {
                 BIOGRAPHY // RESEARCH_FILE
               </h2>
               <div className="space-y-4 text-[var(--text-secondary)] text-sm leading-relaxed">
-                <p>
-                  From the rugged mountains of{" "}
-                  <span className="text-[var(--text-primary)]">Waziristan</span>{" "}
-                  to the cutting edge of artificial intelligence — my journey is
-                  one of relentless curiosity and cultural pride. I grew up
-                  surrounded by the rich traditions of{" "}
-                  <span className="text-[var(--accent-cyan)]">
-                    Pashto culture
-                  </span>
-                  , where storytelling and resilience are woven into the fabric
-                  of daily life.
-                </p>
-                <p>
-                  Inspired by the poetry of{" "}
-                  <span className="text-[var(--accent-purple)]">
-                    Ghani Khan
-                  </span>{" "}
-                  — who bridged worlds between East and West — I found my own
-                  bridge in technology. Code became my language of expression,
-                  and AI became the canvas on which I paint possibilities.
-                </p>
-                <p>
-                  Today, as an{" "}
-                  <span className="text-[var(--text-primary)]">
-                    AI Engineer & Full-Stack Developer
-                  </span>
-                  , I build intelligent agents that understand context, craft
-                  immersive 3D web experiences, and develop applications like{" "}
-                  <span className="text-[var(--accent-cyan)]">SafarDost</span> —
-                  a travel companion designed to showcase the hidden beauty of
-                  Pakistan. My work sits at the intersection of machine
-                  learning, creative coding, and cultural identity.
-                </p>
+                {bioParagraphs.length > 0 ? (
+                  bioParagraphs.map((para, i) => (
+                    <p
+                      key={i}
+                      dangerouslySetInnerHTML={{
+                        __html: renderBioText(para),
+                      }}
+                    />
+                  ))
+                ) : (
+                  <>
+                    <p>
+                      From the rugged mountains of{" "}
+                      <span className="text-[var(--text-primary)]">
+                        Waziristan
+                      </span>{" "}
+                      to the cutting edge of artificial intelligence — my
+                      journey is one of relentless curiosity and cultural pride.
+                    </p>
+                    <p>
+                      Inspired by the poetry of{" "}
+                      <span className="text-[var(--accent-purple)]">
+                        Ghani Khan
+                      </span>{" "}
+                      — who bridged worlds between East and West — I found my
+                      own bridge in technology.
+                    </p>
+                    <p>
+                      Today, as an{" "}
+                      <span className="text-[var(--text-primary)]">
+                        AI Engineer & Full-Stack Developer
+                      </span>
+                      , I build intelligent agents that understand context and
+                      craft immersive 3D web experiences.
+                    </p>
+                  </>
+                )}
               </div>
             </section>
           </TiltCard>
@@ -140,14 +194,17 @@ export default function AboutPage() {
             </h2>
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="flex-1 space-y-3">
-                <h3 className="text-xl font-bold">
-                  BS in Artificial Intelligence
-                </h3>
+                <h3 className="text-xl font-bold">{education.degree}</h3>
                 <p className="text-[var(--text-secondary)] text-sm">
-                  Expected Graduation: June 21, 2026
+                  Expected Graduation:{" "}
+                  {new Date(education.gradDate).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </p>
                 <div className="inline-block px-3 py-1 bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/30 rounded text-[var(--accent-green)] text-xs tracking-wider">
-                  STATUS: IN_PROGRESS
+                  STATUS: {education.status}
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-4">
@@ -216,14 +273,7 @@ export default function AboutPage() {
               className="grid grid-cols-2 md:grid-cols-3 gap-3"
               staggerDelay={0.08}
             >
-              {[
-                { icon: "🤖", label: "AI Agents" },
-                { icon: "🧠", label: "Machine Learning" },
-                { icon: "📷", label: "Cinematic Photography" },
-                { icon: "🎨", label: "3D Rendering (Blender)" },
-                { icon: "💻", label: "Creative Coding" },
-                { icon: "🌍", label: "Travel Tech" },
-              ].map((interest) => (
+              {interests.map((interest) => (
                 <div
                   key={interest.label}
                   className="flex items-center gap-3 p-3 border border-[var(--border-color)] rounded hover:border-[var(--accent-cyan)]/30 hover:bg-[var(--accent-cyan)]/5 transition-all cursor-default"

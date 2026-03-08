@@ -8,6 +8,7 @@ import GlitchText from "@/components/GlitchText";
 import TiltCard from "@/components/TiltCard";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useCmsContent } from "@/lib/useContent";
 
 const Brain3D = dynamic(() => import("@/components/Brain3D"), { ssr: false });
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
@@ -25,7 +26,29 @@ interface Project {
   repoUrl: string | null;
 }
 
-const testimonials = [
+interface ProcessStep {
+  number: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+interface StatItem {
+  target: number;
+  suffix: string;
+  label: string;
+  duration: number;
+  color?: string;
+}
+
+interface Testimonial {
+  name: string;
+  role: string;
+  text: string;
+  initials: string;
+}
+
+const defaultTestimonials: Testimonial[] = [
   {
     name: "Dr. Ahmad Shah",
     role: "AI Research Supervisor",
@@ -46,7 +69,7 @@ const testimonials = [
   },
 ];
 
-const processSteps = [
+const defaultProcessSteps: ProcessStep[] = [
   {
     number: "01",
     title: "RESEARCH",
@@ -79,6 +102,63 @@ const processSteps = [
 
 export default function HomePage() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const { text, json } = useCmsContent("home");
+
+  const testimonials = json<Testimonial[]>(
+    "home_testimonials",
+    defaultTestimonials,
+  );
+  const processSteps = json<ProcessStep[]>(
+    "home_process_steps",
+    defaultProcessSteps,
+  );
+  const heroStats = json<StatItem[]>("home_stats_hero", [
+    { target: 10, suffix: "+", label: "PROJECTS", duration: 2 },
+    { target: 5, suffix: "+", label: "AI MODELS", duration: 2.2 },
+    { target: 3, suffix: "", label: "LANGUAGES", duration: 1.5 },
+  ]);
+  const bannerStats = json<StatItem[]>("home_stats_banner", [
+    {
+      target: 500,
+      suffix: "+",
+      label: "COMMITS",
+      duration: 2.5,
+      color: "var(--accent-cyan)",
+    },
+    {
+      target: 15,
+      suffix: "+",
+      label: "REPOSITORIES",
+      duration: 2,
+      color: "var(--accent-purple)",
+    },
+    {
+      target: 1000,
+      suffix: "+",
+      label: "CUPS OF COFFEE",
+      duration: 3,
+      color: "var(--accent-green)",
+    },
+    {
+      target: 24,
+      suffix: "/7",
+      label: "UPTIME",
+      duration: 1.5,
+      color: "var(--accent-cyan)",
+    },
+  ]);
+  const techStack = json<string[]>("home_tech_stack", [
+    "Python",
+    "TypeScript",
+    "React",
+    "Next.js",
+    "Flask",
+    "TensorFlow",
+    "Three.js",
+    "GSAP",
+    "Prisma",
+    "Blender",
+  ]);
 
   useEffect(() => {
     fetch("/api/projects")
@@ -105,27 +185,28 @@ export default function HomePage() {
           <ScrollReveal direction="left" duration={1}>
             <div className="space-y-2">
               <p className="text-xs tracking-[0.3em] text-[var(--accent-purple)] uppercase">
-                // system.identity
+                {text("home_hero_subtitle_tag", "// system.identity")}
               </p>
               <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-                AHSAN{" "}
+                {text("home_hero_name_first", "AHSAN")}{" "}
                 <GlitchText
-                  text="BURKI"
+                  text={text("home_hero_name_last", "BURKI")}
                   as="span"
                   className="gradient-text text-4xl md:text-6xl font-bold"
                 />
               </h1>
               <h2 className="text-lg md:text-xl text-[var(--accent-cyan)] font-light tracking-wider text-shadow-glow">
-                AI SYSTEMS ARCHITECT
+                {text("home_hero_title", "AI SYSTEMS ARCHITECT")}
               </h2>
             </div>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
             <p className="text-[var(--text-secondary)] text-sm md:text-base max-w-lg leading-relaxed">
-              Engineering intelligent agents and immersive web experiences from
-              Waziristan to the world. Specializing in AI/ML systems, full-stack
-              development, and 3D creative coding.
+              {text(
+                "home_hero_description",
+                "Engineering intelligent agents and immersive web experiences from Waziristan to the world. Specializing in AI/ML systems, full-stack development, and 3D creative coding.",
+              )}
             </p>
           </ScrollReveal>
 
@@ -149,30 +230,17 @@ export default function HomePage() {
           {/* Animated Stats */}
           <ScrollReveal delay={0.4}>
             <div className="flex gap-8 pt-4">
-              <AnimatedCounter
-                target={10}
-                suffix="+"
-                duration={2}
-                className="text-2xl font-bold text-[var(--accent-cyan)]"
-                label="PROJECTS"
-                labelClassName="text-[10px] tracking-widest text-[var(--text-secondary)]"
-              />
-              <AnimatedCounter
-                target={5}
-                suffix="+"
-                duration={2.2}
-                className="text-2xl font-bold text-[var(--accent-cyan)]"
-                label="AI MODELS"
-                labelClassName="text-[10px] tracking-widest text-[var(--text-secondary)]"
-              />
-              <AnimatedCounter
-                target={3}
-                suffix=""
-                duration={1.5}
-                className="text-2xl font-bold text-[var(--accent-cyan)]"
-                label="LANGUAGES"
-                labelClassName="text-[10px] tracking-widest text-[var(--text-secondary)]"
-              />
+              {heroStats.map((stat, i) => (
+                <AnimatedCounter
+                  key={i}
+                  target={stat.target}
+                  suffix={stat.suffix}
+                  duration={stat.duration}
+                  className="text-2xl font-bold text-[var(--accent-cyan)]"
+                  label={stat.label}
+                  labelClassName="text-[10px] tracking-widest text-[var(--text-secondary)]"
+                />
+              ))}
             </div>
           </ScrollReveal>
         </div>
@@ -346,38 +414,18 @@ export default function HomePage() {
             <div className="border border-[var(--border-color)] rounded-lg p-8 md:p-12 bg-[var(--bg-card)] relative overflow-hidden animate-shimmer">
               <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--accent-cyan)]/50 to-transparent" />
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                <AnimatedCounter
-                  target={500}
-                  suffix="+"
-                  duration={2.5}
-                  className="text-3xl md:text-4xl font-bold text-[var(--accent-cyan)]"
-                  label="COMMITS"
-                  labelClassName="text-[10px] tracking-widest text-[var(--text-secondary)] mt-1"
-                />
-                <AnimatedCounter
-                  target={15}
-                  suffix="+"
-                  duration={2}
-                  className="text-3xl md:text-4xl font-bold text-[var(--accent-purple)]"
-                  label="REPOSITORIES"
-                  labelClassName="text-[10px] tracking-widest text-[var(--text-secondary)] mt-1"
-                />
-                <AnimatedCounter
-                  target={1000}
-                  suffix="+"
-                  duration={3}
-                  className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]"
-                  label="CUPS OF COFFEE"
-                  labelClassName="text-[10px] tracking-widest text-[var(--text-secondary)] mt-1"
-                />
-                <AnimatedCounter
-                  target={24}
-                  suffix="/7"
-                  duration={1.5}
-                  className="text-3xl md:text-4xl font-bold text-[var(--accent-cyan)]"
-                  label="UPTIME"
-                  labelClassName="text-[10px] tracking-widest text-[var(--text-secondary)] mt-1"
-                />
+                {bannerStats.map((stat, i) => (
+                  <AnimatedCounter
+                    key={i}
+                    target={stat.target}
+                    suffix={stat.suffix}
+                    duration={stat.duration}
+                    className={`text-3xl md:text-4xl font-bold`}
+                    style={stat.color ? { color: stat.color } : undefined}
+                    label={stat.label}
+                    labelClassName="text-[10px] tracking-widest text-[var(--text-secondary)] mt-1"
+                  />
+                ))}
               </div>
             </div>
           </ScrollReveal>
@@ -446,13 +494,30 @@ export default function HomePage() {
                 // INITIATE_CONTACT
               </p>
               <h2 className="text-2xl md:text-3xl font-bold mb-4">
-                LET&apos;S BUILD{" "}
-                <span className="gradient-text">SOMETHING</span> TOGETHER
+                {(() => {
+                  const ctaTitle = text(
+                    "home_cta_title",
+                    "LET'S BUILD SOMETHING TOGETHER",
+                  );
+                  const words = ctaTitle.split(" ");
+                  if (words.length >= 3) {
+                    const mid = Math.floor(words.length / 2);
+                    return (
+                      <>
+                        {words.slice(0, mid).join(" ")}{" "}
+                        <span className="gradient-text">{words[mid]}</span>{" "}
+                        {words.slice(mid + 1).join(" ")}
+                      </>
+                    );
+                  }
+                  return ctaTitle;
+                })()}
               </h2>
               <p className="text-[var(--text-secondary)] text-sm mb-8 max-w-lg mx-auto">
-                Whether it&apos;s an AI agent, a web application, or a creative
-                experiment — I&apos;m always open to new collaborations and
-                ideas.
+                {text(
+                  "home_cta_description",
+                  "Whether it's an AI agent, a web application, or a creative experiment — I'm always open to new collaborations and ideas.",
+                )}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
@@ -483,18 +548,7 @@ export default function HomePage() {
             className="flex flex-wrap justify-center gap-4"
             staggerDelay={0.04}
           >
-            {[
-              "Python",
-              "TypeScript",
-              "React",
-              "Next.js",
-              "Flask",
-              "TensorFlow",
-              "Three.js",
-              "GSAP",
-              "Prisma",
-              "Blender",
-            ].map((tech) => (
+            {techStack.map((tech) => (
               <span
                 key={tech}
                 className="px-3 py-1 text-[10px] tracking-wider border border-[var(--border-color)] rounded text-[var(--text-secondary)] hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] hover:bg-[var(--accent-cyan)]/5 transition-all cursor-default"

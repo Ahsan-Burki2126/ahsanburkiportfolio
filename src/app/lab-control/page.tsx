@@ -7,8 +7,9 @@ import MessagesPanel from "./MessagesPanel";
 import ProjectsPanel from "./ProjectsPanel";
 import ProfilePanel from "./ProfilePanel";
 import AssetManager from "./AssetManager";
+import ContentPanel from "./ContentPanel";
 
-type Tab = "stats" | "messages" | "projects" | "profile" | "assets";
+type Tab = "stats" | "messages" | "projects" | "profile" | "assets" | "content";
 
 export default function LabControlPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -33,6 +34,7 @@ export default function LabControlPage() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "stats", label: "OVERVIEW" },
+    { id: "content", label: "CONTENT" },
     { id: "messages", label: "TRANSMISSIONS" },
     { id: "projects", label: "EXPERIMENTS" },
     { id: "profile", label: "PROFILE" },
@@ -83,6 +85,7 @@ export default function LabControlPage() {
 
         {/* Content */}
         {activeTab === "stats" && <DashboardStats token={token} />}
+        {activeTab === "content" && <ContentPanel token={token} />}
         {activeTab === "messages" && <MessagesPanel token={token} />}
         {activeTab === "projects" && <ProjectsPanel token={token} />}
         {activeTab === "profile" && <ProfilePanel token={token} />}

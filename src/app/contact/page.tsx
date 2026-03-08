@@ -5,16 +5,43 @@ import dynamic from "next/dynamic";
 import ScrollReveal from "@/components/ScrollReveal";
 import GlitchText from "@/components/GlitchText";
 import TiltCard from "@/components/TiltCard";
+import { useCmsContent } from "@/lib/useContent";
 
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
   ssr: false,
 });
+
+interface LocationInfo {
+  city: string;
+  country: string;
+  coordinates: string;
+  sector: string;
+}
+
+interface StatusItem {
+  label: string;
+  status: string;
+  color: string;
+}
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle",
   );
+  const { text, json } = useCmsContent("contact");
+
+  const location = json<LocationInfo>("contact_location", {
+    city: "Waziristan / Islamabad",
+    country: "Pakistan",
+    coordinates: "32.9°N, 69.9°E",
+    sector: "WAZIRISTAN SECTOR",
+  });
+  const systemStatus = json<StatusItem[]>("contact_system_status", [
+    { label: "UPLINK", status: "ACTIVE", color: "var(--accent-green)" },
+    { label: "RESPONSE TIME", status: "< 24 HRS", color: "var(--accent-cyan)" },
+    { label: "ENCRYPTION", status: "ENABLED", color: "var(--accent-green)" },
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,13 +76,15 @@ export default function ContactPage() {
               // 03.SECURE_UPLINK
             </p>
             <GlitchText
-              text="ESTABLISH CONTACT"
+              text={text("contact_page_title", "ESTABLISH CONTACT")}
               as="h1"
               className="text-3xl md:text-5xl font-bold"
             />
             <p className="text-[var(--text-secondary)] text-sm">
-              Open a secure communication channel. All transmissions are
-              encrypted and stored safely.
+              {text(
+                "contact_page_description",
+                "Open a secure communication channel. All transmissions are encrypted and stored safely.",
+              )}
             </p>
           </div>
         </ScrollReveal>
@@ -71,18 +100,18 @@ export default function ContactPage() {
                     COORDINATES
                   </h3>
                   <p className="text-sm text-[var(--text-primary)]">
-                    Waziristan / Islamabad
+                    {location.city}
                   </p>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    Pakistan
+                    {location.country}
                   </p>
                   <div className="mt-3 h-32 bg-[var(--bg-secondary)] rounded border border-[var(--border-color)] flex items-center justify-center relative overflow-hidden">
                     <div className="text-center">
                       <p className="text-[var(--accent-cyan)] text-xs font-mono">
-                        32.9°N, 69.9°E
+                        {location.coordinates}
                       </p>
                       <p className="text-[8px] text-[var(--text-secondary)] mt-1 tracking-wider">
-                        WAZIRISTAN SECTOR
+                        {location.sector}
                       </p>
                     </div>
                     {/* Grid overlay */}
@@ -107,23 +136,7 @@ export default function ContactPage() {
                     SYSTEM STATUS
                   </h3>
                   <div className="space-y-2">
-                    {[
-                      {
-                        label: "UPLINK",
-                        status: "ACTIVE",
-                        color: "var(--accent-green)",
-                      },
-                      {
-                        label: "RESPONSE TIME",
-                        status: "< 24 HRS",
-                        color: "var(--accent-cyan)",
-                      },
-                      {
-                        label: "ENCRYPTION",
-                        status: "ENABLED",
-                        color: "var(--accent-green)",
-                      },
-                    ].map((item) => (
+                    {systemStatus.map((item) => (
                       <div
                         key={item.label}
                         className="flex justify-between items-center text-xs"

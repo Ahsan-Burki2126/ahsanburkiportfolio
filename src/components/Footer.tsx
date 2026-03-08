@@ -2,8 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCmsContent } from "@/lib/useContent";
 
-const socialLinks = [
+interface SocialLink {
+  label: string;
+  href: string;
+  icon: string;
+}
+
+interface StatusItem {
+  text: string;
+  color: string;
+  pulse: boolean;
+}
+
+const defaultSocialLinks: SocialLink[] = [
   { label: "GitHub", href: "https://github.com/Ahsan-Burki2126", icon: "GH" },
   {
     label: "LinkedIn",
@@ -24,6 +37,30 @@ const quickLinks = [
 
 export default function Footer() {
   const pathname = usePathname();
+  const { text, json } = useCmsContent("global");
+
+  const socialLinks = json<SocialLink[]>(
+    "footer_social_links",
+    defaultSocialLinks,
+  );
+  const footerBio = text(
+    "footer_bio",
+    "AI Systems Architect building intelligent agents and immersive digital experiences from Waziristan to the world.",
+  );
+  const statusItems = json<StatusItem[]>("footer_status", [
+    {
+      text: "All systems operational",
+      color: "var(--accent-green)",
+      pulse: true,
+    },
+    {
+      text: "Open to opportunities",
+      color: "var(--accent-cyan)",
+      pulse: false,
+    },
+    { text: "Based in Pakistan", color: "var(--accent-purple)", pulse: false },
+  ]);
+
   if (pathname?.startsWith("/lab-control")) return null;
 
   return (
@@ -46,8 +83,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-[var(--text-secondary)] text-xs leading-relaxed max-w-xs">
-              AI Systems Architect building intelligent agents and immersive
-              digital experiences from Waziristan to the world.
+              {footerBio}
             </p>
             <div className="flex gap-3">
               {socialLinks.map((social) => (
@@ -89,24 +125,17 @@ export default function Footer() {
               // SYSTEM_STATUS
             </h3>
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[var(--accent-green)] animate-pulse" />
-                <span className="text-xs text-[var(--text-secondary)]">
-                  All systems operational
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[var(--accent-cyan)]" />
-                <span className="text-xs text-[var(--text-secondary)]">
-                  Open to opportunities
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[var(--accent-purple)]" />
-                <span className="text-xs text-[var(--text-secondary)]">
-                  Based in Pakistan
-                </span>
-              </div>
+              {statusItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${item.pulse ? "animate-pulse" : ""}`}
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-xs text-[var(--text-secondary)]">
+                    {item.text}
+                  </span>
+                </div>
+              ))}
             </div>
 
             <div className="pt-4">

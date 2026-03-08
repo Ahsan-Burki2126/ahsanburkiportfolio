@@ -6,6 +6,7 @@ import gsap from "gsap";
 import ScrollReveal, { StaggerReveal } from "@/components/ScrollReveal";
 import GlitchText from "@/components/GlitchText";
 import TiltCard from "@/components/TiltCard";
+import { useCmsContent } from "@/lib/useContent";
 
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
   ssr: false,
@@ -14,10 +15,27 @@ const ParticleField = dynamic(() => import("@/components/ParticleField"), {
 interface Skill {
   name: string;
   level: number;
-  category: string;
 }
 
-const skillCategories = [
+interface SkillCategory {
+  title: string;
+  icon: string;
+  color: string;
+  skills: Skill[];
+}
+
+interface RadarSkill {
+  name: string;
+  value: number;
+}
+
+interface LearningItem {
+  name: string;
+  status: string;
+  note: string;
+}
+
+const defaultSkillCategories: SkillCategory[] = [
   {
     title: "AI / Machine Learning",
     icon: "🧠",
@@ -124,18 +142,21 @@ function AnimatedBar({
   );
 }
 
-function HexagonSkillMap() {
+function HexagonSkillMap({ radarSkills }: { radarSkills: RadarSkill[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hovered, setHovered] = useState<string | null>(null);
 
-  const radarSkills = [
-    { name: "AI/ML", value: 0.88 },
-    { name: "Frontend", value: 0.9 },
-    { name: "Backend", value: 0.82 },
-    { name: "Creative", value: 0.78 },
-    { name: "DevOps", value: 0.72 },
-    { name: "Research", value: 0.85 },
-  ];
+  const skills =
+    radarSkills.length > 0
+      ? radarSkills
+      : [
+          { name: "AI/ML", value: 0.88 },
+          { name: "Frontend", value: 0.9 },
+          { name: "Backend", value: 0.82 },
+          { name: "Creative", value: 0.78 },
+          { name: "DevOps", value: 0.72 },
+          { name: "Research", value: 0.85 },
+        ];
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -188,7 +209,7 @@ function HexagonSkillMap() {
 
       // Draw data polygon
       ctx.beginPath();
-      radarSkills.forEach((skill, i) => {
+      skills.forEach((skill, i) => {
         const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2;
         const r = maxR * skill.value * progress;
         const x = cx + r * Math.cos(angle);
@@ -204,7 +225,7 @@ function HexagonSkillMap() {
       ctx.stroke();
 
       // Draw data points & labels
-      radarSkills.forEach((skill, i) => {
+      skills.forEach((skill, i) => {
         const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2;
         const r = maxR * skill.value * progress;
         const x = cx + r * Math.cos(angle);
@@ -269,6 +290,26 @@ function HexagonSkillMap() {
 }
 
 export default function SkillsPage() {
+  const { text, json } = useCmsContent("skills");
+
+  const skillCategories = json<SkillCategory[]>(
+    "skills_categories",
+    defaultSkillCategories,
+  );
+  const radarSkills = json<RadarSkill[]>("skills_radar", [
+    { name: "AI/ML", value: 0.88 },
+    { name: "Frontend", value: 0.9 },
+    { name: "Backend", value: 0.82 },
+    { name: "Creative", value: 0.78 },
+    { name: "DevOps", value: 0.72 },
+    { name: "Research", value: 0.85 },
+  ]);
+  const currentlyLearning = json<LearningItem[]>(
+    "skills_currently_learning",
+    [],
+  );
+  const fullTechStack = json<string[]>("skills_full_stack", []);
+
   return (
     <div className="min-h-screen py-20 px-6 relative">
       <ParticleField />
@@ -280,13 +321,15 @@ export default function SkillsPage() {
               // 05.CAPABILITY_MAP
             </p>
             <GlitchText
-              text="SKILL MATRIX"
+              text={text("skills_page_title", "SKILL MATRIX")}
               as="h1"
               className="text-3xl md:text-5xl font-bold"
             />
             <p className="text-[var(--text-secondary)] text-sm max-w-lg">
-              A comprehensive breakdown of technical proficiencies, constantly
-              evolving through experimentation and real-world deployment.
+              {text(
+                "skills_page_description",
+                "A comprehensive breakdown of technical proficiencies, constantly evolving through experimentation and real-world deployment.",
+              )}
             </p>
           </div>
         </ScrollReveal>
@@ -298,7 +341,7 @@ export default function SkillsPage() {
             <h2 className="text-sm tracking-widest text-[var(--accent-cyan)] mb-8 text-center">
               COMPETENCY RADAR // OVERVIEW
             </h2>
-            <HexagonSkillMap />
+            <HexagonSkillMap radarSkills={radarSkills} />
           </div>
         </ScrollReveal>
 
@@ -365,38 +408,41 @@ export default function SkillsPage() {
               className="grid md:grid-cols-3 gap-4"
               staggerDelay={0.08}
             >
-              {[
-                {
-                  name: "Rust",
-                  status: "Exploring",
-                  note: "Systems-level AI performance",
-                },
-                {
-                  name: "CUDA / GPU Programming",
-                  status: "In Progress",
-                  note: "Custom ML kernel optimization",
-                },
-                {
-                  name: "German (B1)",
-                  status: "Active",
-                  note: "Language acquisition via Duolingo",
-                },
-                {
-                  name: "Kubernetes",
-                  status: "Exploring",
-                  note: "Container orchestration for ML pipelines",
-                },
-                {
-                  name: "WebGPU",
-                  status: "Researching",
-                  note: "Next-gen browser compute shaders",
-                },
-                {
-                  name: "Multimodal AI",
-                  status: "Active",
-                  note: "Vision-language model integration",
-                },
-              ].map((item) => (
+              {(currentlyLearning.length > 0
+                ? currentlyLearning
+                : [
+                    {
+                      name: "Rust",
+                      status: "Exploring",
+                      note: "Systems-level AI performance",
+                    },
+                    {
+                      name: "CUDA / GPU Programming",
+                      status: "In Progress",
+                      note: "Custom ML kernel optimization",
+                    },
+                    {
+                      name: "German (B1)",
+                      status: "Active",
+                      note: "Language acquisition via Duolingo",
+                    },
+                    {
+                      name: "Kubernetes",
+                      status: "Exploring",
+                      note: "Container orchestration for ML pipelines",
+                    },
+                    {
+                      name: "WebGPU",
+                      status: "Researching",
+                      note: "Next-gen browser compute shaders",
+                    },
+                    {
+                      name: "Multimodal AI",
+                      status: "Active",
+                      note: "Vision-language model integration",
+                    },
+                  ]
+              ).map((item) => (
                 <div
                   key={item.name}
                   className="border border-[var(--border-color)] rounded p-4 hover:border-[var(--accent-green)]/30 transition-colors"
@@ -428,39 +474,42 @@ export default function SkillsPage() {
               className="flex flex-wrap justify-center gap-3"
               staggerDelay={0.03}
             >
-              {[
-                "Python",
-                "TypeScript",
-                "JavaScript",
-                "SQL",
-                "HTML/CSS",
-                "React",
-                "Next.js",
-                "Flask",
-                "Express",
-                "FastAPI",
-                "TensorFlow",
-                "PyTorch",
-                "LangChain",
-                "OpenAI API",
-                "Prisma",
-                "PostgreSQL",
-                "SQLite",
-                "MongoDB",
-                "Three.js",
-                "GSAP",
-                "Tailwind",
-                "Framer Motion",
-                "Git",
-                "Docker",
-                "Vercel",
-                "AWS",
-                "Linux",
-                "Blender",
-                "Figma",
-                "VS Code",
-                "Cursor",
-              ].map((tech, i) => (
+              {(fullTechStack.length > 0
+                ? fullTechStack
+                : [
+                    "Python",
+                    "TypeScript",
+                    "JavaScript",
+                    "SQL",
+                    "HTML/CSS",
+                    "React",
+                    "Next.js",
+                    "Flask",
+                    "Express",
+                    "FastAPI",
+                    "TensorFlow",
+                    "PyTorch",
+                    "LangChain",
+                    "OpenAI API",
+                    "Prisma",
+                    "PostgreSQL",
+                    "SQLite",
+                    "MongoDB",
+                    "Three.js",
+                    "GSAP",
+                    "Tailwind",
+                    "Framer Motion",
+                    "Git",
+                    "Docker",
+                    "Vercel",
+                    "AWS",
+                    "Linux",
+                    "Blender",
+                    "Figma",
+                    "VS Code",
+                    "Cursor",
+                  ]
+              ).map((tech, i) => (
                 <span
                   key={tech}
                   className="px-3 py-1.5 text-[10px] tracking-wider border border-[var(--border-color)] rounded text-[var(--text-secondary)] hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] hover:bg-[var(--accent-cyan)]/5 transition-all cursor-default"
