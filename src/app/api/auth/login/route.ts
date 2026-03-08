@@ -30,13 +30,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // If 2FA is set up, require TOTP verification
+    if (admin.totpSecret) {
+      return NextResponse.json({
+        requires2FA: true,
+        tempToken: jwt.sign(
+          { userId: admin.id, pending2FA: true },
+          process.env.JWT_SECRET || "fallback-secret",
+          { expiresIn: "5m" },
+        ),
+      });
+    }
+
     const token = jwt.sign(
       { userId: admin.id, username: admin.username },
       process.env.JWT_SECRET || "fallback-secret",
       { expiresIn: "24h" },
     );
 
-    return NextResponse.json({ token });
+    return NextResponse.json({ token, needs2FASetup: !admin.totpSecret });
   } catch {
     return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }

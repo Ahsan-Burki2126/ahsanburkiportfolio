@@ -4,8 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const socialLinks = [
-  { label: "GitHub", href: "https://github.com/ahsanburki", icon: "GH" },
-  { label: "LinkedIn", href: "https://linkedin.com/in/ahsanburki", icon: "LI" },
+  { label: "GitHub", href: "https://github.com/Ahsan-Burki2126", icon: "GH" },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/ahsan-ullah-burki-25496930b/",
+    icon: "LI",
+  },
   { label: "Twitter / X", href: "https://x.com/ahsanburki", icon: "X" },
 ];
 

@@ -62,7 +62,8 @@ model DownloadLog {
 }
 
 model AdminUser {
-  id       String @id @default(cuid())
-  username String @unique
-  password String
+  id         String @id @default(cuid())
+  username   String @unique
+  password   String
+  totpSecret String?
 }
