@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import ScrollReveal, { StaggerReveal } from "@/components/ScrollReveal";
 import GlitchText from "@/components/GlitchText";
@@ -22,10 +22,23 @@ interface Project {
   category: string;
 }
 
-const categories = ["all", "web", "ai", "3d", "photography"];
-
 export default function ProjectsClient({ projects }: { projects: Project[] }) {
   const [filter, setFilter] = useState("all");
+  const [categories, setCategories] = useState<string[]>(["all", "web", "ai", "3d", "photography"]);
+
+  useEffect(() => {
+    fetch("/api/content?key=project_categories")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.value) {
+          try {
+            const cats: string[] = JSON.parse(data.value);
+            setCategories(["all", ...cats]);
+          } catch { /* keep defaults */ }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const filtered =
     filter === "all" ? projects : projects.filter((p) => p.category === filter);

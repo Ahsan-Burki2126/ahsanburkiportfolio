@@ -685,6 +685,13 @@ async function main() {
       page: "global",
       label: "Footer Status Items",
     },
+    {
+      key: "project_categories",
+      value: JSON.stringify(["web", "ai", "3d", "photography"]),
+      type: "json",
+      page: "global",
+      label: "Project Categories",
+    },
   ];
 
   for (const item of contentItems) {

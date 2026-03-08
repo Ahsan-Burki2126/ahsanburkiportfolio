@@ -30,6 +30,69 @@ export default function ProjectsPanel({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyProject);
   const [editing, setEditing] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>(["web", "ai", "3d", "photography"]);
+  const [newCategory, setNewCategory] = useState("");
+  const [catSaving, setCatSaving] = useState(false);
+
+  const fetchCategories = useCallback(() => {
+    fetch("/api/content?key=project_categories")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.value) {
+          try {
+            setCategories(JSON.parse(data.value));
+          } catch { /* keep defaults */ }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const saveCategories = async (updated: string[]) => {
+    setCatSaving(true);
+    const res = await fetch("/api/content", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        key: "project_categories",
+        value: JSON.stringify(updated),
+      }),
+    });
+    if (!res.ok) {
+      // Key might not exist yet — create it
+      await fetch("/api/content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          key: "project_categories",
+          value: JSON.stringify(updated),
+          type: "json",
+          page: "global",
+          label: "Project Categories",
+        }),
+      });
+    }
+    setCategories(updated);
+    setCatSaving(false);
+  };
+
+  const addCategory = async () => {
+    const name = newCategory.trim().toLowerCase();
+    if (!name || categories.includes(name)) return;
+    await saveCategories([...categories, name]);
+    setNewCategory("");
+  };
+
+  const deleteCategory = async (cat: string) => {
+    const inUse = projects.some((p) => p.category === cat);
+    if (inUse && !confirm(`Category "${cat}" is used by existing projects. Delete anyway?`)) return;
+    await saveCategories(categories.filter((c) => c !== cat));
+  };
 
   const fetchProjects = useCallback(() => {
     setLoading(true);
@@ -44,7 +107,8 @@ export default function ProjectsPanel({ token }: { token: string }) {
 
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+    fetchCategories();
+  }, [fetchProjects, fetchCategories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,10 +190,11 @@ export default function ProjectsPanel({ token }: { token: string }) {
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-sm focus:border-[var(--accent-cyan)] focus:outline-none"
             >
-              <option value="web">Web</option>
-              <option value="ai">AI</option>
-              <option value="3d">3D</option>
-              <option value="photography">Photography</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -219,6 +284,49 @@ export default function ProjectsPanel({ token }: { token: string }) {
           )}
         </div>
       </form>
+
+      {/* Category Manager */}
+      <div className="border border-[var(--border-color)] rounded-lg p-6 bg-[var(--bg-card)] space-y-4">
+        <h3 className="text-[10px] tracking-widest text-[var(--accent-purple)]">
+          CATEGORY MANAGER
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((cat) => (
+            <span
+              key={cat}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs"
+            >
+              <span className="uppercase tracking-wider">{cat}</span>
+              <button
+                onClick={() => deleteCategory(cat)}
+                disabled={catSaving}
+                className="text-red-400 hover:text-red-300 transition-colors text-sm leading-none"
+                title={`Delete ${cat}`}
+              >
+                &times;
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCategory())}
+            placeholder="New category name..."
+            className="flex-1 max-w-xs px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-sm focus:border-[var(--accent-cyan)] focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={addCategory}
+            disabled={catSaving || !newCategory.trim()}
+            className="px-4 py-2 bg-[var(--accent-purple)]/10 border border-[var(--accent-purple)]/30 text-[var(--accent-purple)] text-[10px] tracking-widest rounded hover:bg-[var(--accent-purple)]/20 transition-colors disabled:opacity-50"
+          >
+            {catSaving ? "SAVING..." : "ADD CATEGORY"}
+          </button>
+        </div>
+      </div>
 
       {/* Project list */}
       {loading ? (
