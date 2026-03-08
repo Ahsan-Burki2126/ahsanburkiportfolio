@@ -116,7 +116,10 @@ export default function LoginPanel({
       const res = await fetch("/api/auth/2fa/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tempToken: loginData.tempToken, code: totpCode }),
+        body: JSON.stringify({
+          tempToken: loginData.tempToken,
+          code: totpCode,
+        }),
       });
 
       const data = await res.json();
@@ -198,7 +201,8 @@ export default function LoginPanel({
             <form onSubmit={handleSetupComplete} className="space-y-4">
               <div className="text-center space-y-3">
                 <p className="text-xs text-[var(--text-secondary)]">
-                  Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+                  Scan this QR code with your authenticator app (Google
+                  Authenticator, Authy, etc.)
                 </p>
                 {qrCode && (
                   <div className="flex justify-center">
@@ -228,7 +232,9 @@ export default function LoginPanel({
                 <input
                   type="text"
                   value={totpCode}
-                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onChange={(e) =>
+                    setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
                   required
                   maxLength={6}
                   placeholder="000000"
@@ -264,7 +270,9 @@ export default function LoginPanel({
                 <input
                   type="text"
                   value={totpCode}
-                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onChange={(e) =>
+                    setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
                   required
                   maxLength={6}
                   placeholder="000000"

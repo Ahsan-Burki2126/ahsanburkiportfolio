@@ -55,9 +55,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ token });
   } catch {
-    return NextResponse.json(
-      { error: "Verification failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Verification failed" }, { status: 500 });
   }
 }

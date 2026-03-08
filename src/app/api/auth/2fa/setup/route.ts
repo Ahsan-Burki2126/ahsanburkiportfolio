@@ -46,9 +46,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ qrCode: qrCodeDataUrl, secret: secret.base32 });
   } catch {
-    return NextResponse.json(
-      { error: "Failed to setup 2FA" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to setup 2FA" }, { status: 500 });
   }
 }
