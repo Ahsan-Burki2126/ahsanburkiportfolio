@@ -4,8 +4,14 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollProgress from "@/components/ScrollProgress";
 
+const siteUrl = "https://ahsanburki.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Ahsan Burki | AI Systems Architect",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Ahsan Burki | AI Systems Architect",
+    template: "%s | Ahsan Burki",
+  },
   description:
     "Portfolio of Ahsan Burki — AI Engineer & Full-Stack Developer from Waziristan, Pakistan. Building intelligent agents and immersive web experiences.",
   keywords: [
@@ -14,7 +20,41 @@ export const metadata: Metadata = {
     "Ahsan Burki",
     "Portfolio",
     "SafarDost",
+    "Machine Learning",
+    "Next.js",
+    "Waziristan",
+    "Pakistan",
   ],
+  authors: [{ name: "Ahsan Burki" }],
+  creator: "Ahsan Burki",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: "Ahsan Burki — Portfolio",
+    title: "Ahsan Burki | AI Systems Architect",
+    description:
+      "AI Engineer & Full-Stack Developer from Waziristan, Pakistan. Building intelligent agents and immersive web experiences.",
+    images: [
+      {
+        url: "/log-image.jpeg",
+        width: 800,
+        height: 800,
+        alt: "Ahsan Burki — AI Systems Architect",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ahsan Burki | AI Systems Architect",
+    description:
+      "AI Engineer & Full-Stack Developer from Waziristan, Pakistan. Building intelligent agents and immersive web experiences.",
+    images: ["/log-image.jpeg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
