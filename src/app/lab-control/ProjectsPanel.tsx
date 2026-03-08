@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 interface Project {
   id: string;
@@ -30,7 +30,13 @@ export default function ProjectsPanel({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyProject);
   const [editing, setEditing] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>(["web", "ai", "3d", "photography"]);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [categories, setCategories] = useState<string[]>([
+    "web",
+    "ai",
+    "3d",
+    "photography",
+  ]);
   const [newCategory, setNewCategory] = useState("");
   const [catSaving, setCatSaving] = useState(false);
 
@@ -41,7 +47,9 @@ export default function ProjectsPanel({ token }: { token: string }) {
         if (data.value) {
           try {
             setCategories(JSON.parse(data.value));
-          } catch { /* keep defaults */ }
+          } catch {
+            /* keep defaults */
+          }
         }
       })
       .catch(() => {});
@@ -90,7 +98,11 @@ export default function ProjectsPanel({ token }: { token: string }) {
 
   const deleteCategory = async (cat: string) => {
     const inUse = projects.some((p) => p.category === cat);
-    if (inUse && !confirm(`Category "${cat}" is used by existing projects. Delete anyway?`)) return;
+    if (
+      inUse &&
+      !confirm(`Category "${cat}" is used by existing projects. Delete anyway?`)
+    )
+      return;
     await saveCategories(categories.filter((c) => c !== cat));
   };
 
@@ -142,6 +154,11 @@ export default function ProjectsPanel({ token }: { token: string }) {
       repoUrl: project.repoUrl || "",
       featured: project.featured,
     });
+    setTimeout(
+      () =>
+        formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      100,
+    );
   };
 
   const deleteProject = async (id: string) => {
@@ -161,6 +178,7 @@ export default function ProjectsPanel({ token }: { token: string }) {
 
       {/* Form */}
       <form
+        ref={formRef}
         onSubmit={handleSubmit}
         className="border border-[var(--border-color)] rounded-lg p-6 bg-[var(--bg-card)] space-y-4"
       >
@@ -313,7 +331,9 @@ export default function ProjectsPanel({ token }: { token: string }) {
             type="text"
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCategory())}
+            onKeyDown={(e) =>
+              e.key === "Enter" && (e.preventDefault(), addCategory())
+            }
             placeholder="New category name..."
             className="flex-1 max-w-xs px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-sm focus:border-[var(--accent-cyan)] focus:outline-none"
           />
@@ -361,13 +381,13 @@ export default function ProjectsPanel({ token }: { token: string }) {
               <div className="flex gap-2 shrink-0">
                 <button
                   onClick={() => startEdit(project)}
-                  className="px-2 py-1 text-[9px] tracking-wider border border-[var(--border-color)] rounded text-[var(--text-secondary)] hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] transition-colors"
+                  className="px-3 py-1.5 text-[9px] tracking-wider border border-[var(--border-color)] rounded text-[var(--text-secondary)] hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] transition-colors cursor-pointer"
                 >
                   EDIT
                 </button>
                 <button
                   onClick={() => deleteProject(project.id)}
-                  className="px-2 py-1 text-[9px] tracking-wider border border-red-500/30 rounded text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="px-3 py-1.5 text-[9px] tracking-wider border border-red-500/30 rounded text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                 >
                   DELETE
                 </button>

@@ -24,7 +24,13 @@ interface Project {
 
 export default function ProjectsClient({ projects }: { projects: Project[] }) {
   const [filter, setFilter] = useState("all");
-  const [categories, setCategories] = useState<string[]>(["all", "web", "ai", "3d", "photography"]);
+  const [categories, setCategories] = useState<string[]>([
+    "all",
+    "web",
+    "ai",
+    "3d",
+    "photography",
+  ]);
 
   useEffect(() => {
     fetch("/api/content?key=project_categories")
@@ -34,7 +40,9 @@ export default function ProjectsClient({ projects }: { projects: Project[] }) {
           try {
             const cats: string[] = JSON.parse(data.value);
             setCategories(["all", ...cats]);
-          } catch { /* keep defaults */ }
+          } catch {
+            /* keep defaults */
+          }
         }
       })
       .catch(() => {});
