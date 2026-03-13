@@ -1,24 +1,29 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  DEFAULT_PROJECT_CATEGORY,
+  dedupeProjects,
+  formatProjectCategoryLabel,
+  normalizeProjectCategory,
+  PROJECT_CATEGORY_OPTIONS,
+  type ProjectRecord,
+} from "@/lib/projects";
 
-interface Project {
-  id: string;
+const emptyProject: {
   title: string;
   description: string;
-  imageUrl: string | null;
   techStack: string;
-  liveUrl: string | null;
-  repoUrl: string | null;
-  featured: boolean;
   category: string;
-}
-
-const emptyProject = {
+  imageUrl: string;
+  liveUrl: string;
+  repoUrl: string;
+  featured: boolean;
+} = {
   title: "",
   description: "",
   techStack: "",
-  category: "web",
+  category: DEFAULT_PROJECT_CATEGORY,
   imageUrl: "",
   liveUrl: "",
   repoUrl: "",
@@ -26,87 +31,29 @@ const emptyProject = {
 };
 
 export default function ProjectsPanel({ token }: { token: string }) {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyProject);
   const [editing, setEditing] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>([
-    "web",
-    "ai",
-    "3d",
-    "photography",
-  ]);
-  const [newCategory, setNewCategory] = useState("");
-  const [catSaving, setCatSaving] = useState(false);
 
-  const fetchCategories = useCallback(() => {
-    fetch("/api/content?key=project_categories")
+  const fetchProjects = useCallback(() => {
+    setLoading(true);
+    fetch("/api/projects")
       .then((r) => r.json())
       .then((data) => {
-        if (data.value) {
-          try {
-            setCategories(JSON.parse(data.value));
-          } catch {
-            /* keep defaults */
-          }
-        }
+        setProjects(dedupeProjects(data));
+        setLoading(false);
       })
-      .catch(() => {});
+      .catch(() => setLoading(false));
   }, []);
 
-  const saveCategories = async (updated: string[]) => {
-    setCatSaving(true);
-    const res = await fetch("/api/content", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        key: "project_categories",
-        value: JSON.stringify(updated),
-      }),
-    });
-    if (!res.ok) {
-      // Key might not exist yet — create it
-      await fetch("/api/content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          key: "project_categories",
-          value: JSON.stringify(updated),
-          type: "json",
-          page: "global",
-          label: "Project Categories",
-        }),
-      });
-    }
-    setCategories(updated);
-    setCatSaving(false);
-  };
-
-  const addCategory = async () => {
-    const name = newCategory.trim().toLowerCase();
-    if (!name || categories.includes(name)) return;
-    await saveCategories([...categories, name]);
-    setNewCategory("");
-  };
-
-  const deleteCategory = async (cat: string) => {
-    const inUse = projects.some((p) => p.category === cat);
-    if (
-      inUse &&
-      !confirm(`Category "${cat}" is used by existing projects. Delete anyway?`)
-    )
-      return;
-    await saveCategories(categories.filter((c) => c !== cat));
-  };
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -134,51 +81,44 @@ export default function ProjectsPanel({ token }: { token: string }) {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const fetchProjects = useCallback(() => {
-    setLoading(true);
-    fetch("/api/projects")
-      .then((r) => r.json())
-      .then((data) => {
-        setProjects(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    fetchProjects();
-    fetchCategories();
-  }, [fetchProjects, fetchCategories]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
 
     const url = editing ? `/api/projects/${editing}` : "/api/projects";
     const method = editing ? "PUT" : "POST";
 
-    await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(form),
-    });
+    try {
+      await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...form,
+          category: normalizeProjectCategory(form.category),
+        }),
+      });
 
-    setForm(emptyProject);
-    setEditing(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    fetchProjects();
+      setForm(emptyProject);
+      setEditing(null);
+      setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      fetchProjects();
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const startEdit = (project: Project) => {
+  const startEdit = (project: ProjectRecord) => {
     setEditing(project.id);
     setForm({
       title: project.title,
       description: project.description,
       techStack: project.techStack,
-      category: project.category,
+      category: normalizeProjectCategory(project.category),
       imageUrl: project.imageUrl || "",
       liveUrl: project.liveUrl || "",
       repoUrl: project.repoUrl || "",
@@ -208,7 +148,6 @@ export default function ProjectsPanel({ token }: { token: string }) {
         EXPERIMENT MANAGER
       </h2>
 
-      {/* Form */}
       <form
         ref={formRef}
         onSubmit={handleSubmit}
@@ -240,9 +179,9 @@ export default function ProjectsPanel({ token }: { token: string }) {
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-sm focus:border-[var(--accent-cyan)] focus:outline-none"
             >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              {PROJECT_CATEGORY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -299,7 +238,6 @@ export default function ProjectsPanel({ token }: { token: string }) {
           </div>
         </div>
 
-        {/* Image Upload */}
         <div className="space-y-2">
           <label className="text-[10px] tracking-widest text-[var(--text-secondary)]">
             PROJECT IMAGE
@@ -359,9 +297,10 @@ export default function ProjectsPanel({ token }: { token: string }) {
         <div className="flex gap-3">
           <button
             type="submit"
+            disabled={saving}
             className="px-6 py-2 bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] text-[10px] tracking-widest rounded hover:bg-[var(--accent-cyan)]/20 transition-colors"
           >
-            {editing ? "UPDATE" : "CREATE"} EXPERIMENT
+            {saving ? "SAVING..." : editing ? "UPDATE" : "CREATE"} EXPERIMENT
           </button>
           {editing && (
             <button
@@ -380,52 +319,6 @@ export default function ProjectsPanel({ token }: { token: string }) {
         </div>
       </form>
 
-      {/* Category Manager */}
-      <div className="border border-[var(--border-color)] rounded-lg p-6 bg-[var(--bg-card)] space-y-4">
-        <h3 className="text-[10px] tracking-widest text-[var(--accent-purple)]">
-          CATEGORY MANAGER
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => (
-            <span
-              key={cat}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs"
-            >
-              <span className="uppercase tracking-wider">{cat}</span>
-              <button
-                onClick={() => deleteCategory(cat)}
-                disabled={catSaving}
-                className="text-red-400 hover:text-red-300 transition-colors text-sm leading-none"
-                title={`Delete ${cat}`}
-              >
-                &times;
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && (e.preventDefault(), addCategory())
-            }
-            placeholder="New category name..."
-            className="flex-1 max-w-xs px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-sm focus:border-[var(--accent-cyan)] focus:outline-none"
-          />
-          <button
-            type="button"
-            onClick={addCategory}
-            disabled={catSaving || !newCategory.trim()}
-            className="px-4 py-2 bg-[var(--accent-purple)]/10 border border-[var(--accent-purple)]/30 text-[var(--accent-purple)] text-[10px] tracking-widest rounded hover:bg-[var(--accent-purple)]/20 transition-colors disabled:opacity-50"
-          >
-            {catSaving ? "SAVING..." : "ADD CATEGORY"}
-          </button>
-        </div>
-      </div>
-
-      {/* Project list */}
       {loading ? (
         <div className="text-center py-10 text-[var(--text-secondary)] text-sm">
           Loading...
@@ -463,7 +356,7 @@ export default function ProjectsPanel({ token }: { token: string }) {
                     </span>
                   )}
                   <span className="text-[8px] px-1.5 py-0.5 bg-[var(--accent-purple)]/10 border border-[var(--accent-purple)]/30 rounded text-[var(--accent-purple)] tracking-wider uppercase">
-                    {project.category}
+                    {formatProjectCategoryLabel(project.category)}
                   </span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] mt-1 truncate">

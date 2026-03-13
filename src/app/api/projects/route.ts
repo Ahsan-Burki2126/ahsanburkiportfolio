@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import {
+  dedupeProjects,
+  getProjectFingerprint,
+  normalizeProjectCategory,
+} from "@/lib/projects";
 
 async function verifyAuth(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -23,7 +28,7 @@ export async function GET() {
   const projects = await prisma.project.findMany({
     orderBy: [{ featured: "desc" }, { order: "asc" }],
   });
-  return NextResponse.json(projects);
+  return NextResponse.json(dedupeProjects(projects));
 }
 
 // POST create project (admin only)
@@ -51,16 +56,58 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const normalizedTitle = String(title).trim();
+  const normalizedDescription = String(description).trim();
+  const normalizedTechStack = String(techStack).trim();
+  const normalizedCategory = normalizeProjectCategory(category);
+  const normalizedImageUrl = imageUrl ? String(imageUrl).trim() : null;
+  const normalizedLiveUrl = liveUrl ? String(liveUrl).trim() : null;
+  const normalizedRepoUrl = repoUrl ? String(repoUrl).trim() : null;
+  const normalizedFeatured = Boolean(featured);
+
+  const newProjectFingerprint = getProjectFingerprint({
+    title: normalizedTitle,
+    description: normalizedDescription,
+    techStack: normalizedTechStack,
+    category: normalizedCategory,
+    liveUrl: normalizedLiveUrl,
+    repoUrl: normalizedRepoUrl,
+  });
+
+  const potentialDuplicates = await prisma.project.findMany({
+    where: {
+      title: { equals: normalizedTitle, mode: "insensitive" },
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      techStack: true,
+      liveUrl: true,
+      repoUrl: true,
+      featured: true,
+      category: true,
+    },
+  });
+
+  const existing = potentialDuplicates.find(
+    (project) => getProjectFingerprint(project) === newProjectFingerprint,
+  );
+  if (existing) {
+    return NextResponse.json(existing);
+  }
+
   const project = await prisma.project.create({
     data: {
-      title,
-      description,
-      techStack,
-      category: category || "web",
-      imageUrl: imageUrl || null,
-      liveUrl: liveUrl || null,
-      repoUrl: repoUrl || null,
-      featured: featured || false,
+      title: normalizedTitle,
+      description: normalizedDescription,
+      techStack: normalizedTechStack,
+      category: normalizedCategory,
+      imageUrl: normalizedImageUrl,
+      liveUrl: normalizedLiveUrl,
+      repoUrl: normalizedRepoUrl,
+      featured: normalizedFeatured,
     },
   });
 

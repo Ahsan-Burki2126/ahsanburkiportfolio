@@ -9,22 +9,12 @@ import TiltCard from "@/components/TiltCard";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCmsContent } from "@/lib/useContent";
+import { dedupeProjects, type ProjectRecord } from "@/lib/projects";
 
 const Brain3D = dynamic(() => import("@/components/Brain3D"), { ssr: false });
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
   ssr: false,
 });
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  techStack: string;
-  category: string;
-  featured: boolean;
-  liveUrl: string | null;
-  repoUrl: string | null;
-}
 
 interface ProcessStep {
   number: string;
@@ -101,7 +91,7 @@ const defaultProcessSteps: ProcessStep[] = [
 ];
 
 export default function HomePage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const { text, json } = useCmsContent("home");
 
   const testimonials = json<Testimonial[]>(
@@ -164,11 +154,10 @@ export default function HomePage() {
     fetch("/api/projects")
       .then((r) => r.json())
       .then((data) => {
-        const featured = (data as Project[])
-          .filter((p) => p.featured)
-          .slice(0, 3);
+        const uniqueProjects = dedupeProjects(data as ProjectRecord[]);
+        const featured = uniqueProjects.filter((p) => p.featured).slice(0, 3);
         const fallback =
-          featured.length > 0 ? featured : (data as Project[]).slice(0, 3);
+          featured.length > 0 ? featured : uniqueProjects.slice(0, 3);
         setProjects(fallback);
       })
       .catch(() => {});

@@ -1,55 +1,52 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import ScrollReveal, { StaggerReveal } from "@/components/ScrollReveal";
+import ScrollReveal from "@/components/ScrollReveal";
 import GlitchText from "@/components/GlitchText";
 import TiltCard from "@/components/TiltCard";
+import {
+  dedupeProjects,
+  formatProjectCategoryLabel,
+  getProjectFilterLabel,
+  PROJECT_FILTER_TABS,
+  resolveProjectCategory,
+  type ProjectFilterValue,
+  type ProjectRecord,
+} from "@/lib/projects";
 
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
   ssr: false,
 });
 
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string | null;
-  techStack: string;
-  liveUrl: string | null;
-  repoUrl: string | null;
-  featured: boolean;
-  category: string;
-}
+export default function ProjectsClient({
+  projects,
+}: {
+  projects: ProjectRecord[];
+}) {
+  const normalizedProjects = useMemo(() => dedupeProjects(projects), [projects]);
+  const [filter, setFilter] = useState<ProjectFilterValue>(PROJECT_FILTER_TABS[0]);
 
-export default function ProjectsClient({ projects }: { projects: Project[] }) {
-  const [filter, setFilter] = useState("all");
-  const [categories, setCategories] = useState<string[]>([
-    "all",
-    "web",
-    "ai",
-    "3d",
-    "photography",
-  ]);
+  const filtered = normalizedProjects.filter(
+    (project) => resolveProjectCategory(project.category) === filter,
+  );
 
   useEffect(() => {
-    fetch("/api/content?key=project_categories")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.value) {
-          try {
-            const cats: string[] = JSON.parse(data.value);
-            setCategories(["all", ...cats]);
-          } catch {
-            /* keep defaults */
-          }
-        }
-      })
-      .catch(() => {});
-  }, []);
+    if (normalizedProjects.length === 0) return;
+    const hasResultsForCurrentFilter = normalizedProjects.some(
+      (project) => resolveProjectCategory(project.category) === filter,
+    );
+    if (hasResultsForCurrentFilter) return;
 
-  const filtered =
-    filter === "all" ? projects : projects.filter((p) => p.category === filter);
+    const firstCategoryWithProjects = PROJECT_FILTER_TABS.find((tab) =>
+      normalizedProjects.some(
+        (project) => resolveProjectCategory(project.category) === tab,
+      ),
+    );
+    if (firstCategoryWithProjects && firstCategoryWithProjects !== filter) {
+      setFilter(firstCategoryWithProjects);
+    }
+  }, [filter, normalizedProjects]);
 
   return (
     <div className="min-h-screen py-20 px-6 relative">
@@ -75,17 +72,17 @@ export default function ProjectsClient({ projects }: { projects: Project[] }) {
 
         {/* Filter tabs */}
         <div className="flex flex-wrap gap-2">
-          {categories.map((cat) => (
+          {PROJECT_FILTER_TABS.map((tab) => (
             <button
-              key={cat}
-              onClick={() => setFilter(cat)}
+              key={tab}
+              onClick={() => setFilter(tab)}
               className={`px-4 py-2 text-[10px] tracking-widest uppercase rounded transition-all ${
-                filter === cat
+                filter === tab
                   ? "bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)]"
                   : "border border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--accent-purple)]/50"
               }`}
             >
-              {cat}
+              {getProjectFilterLabel(tab)}
             </button>
           ))}
         </div>
@@ -131,7 +128,7 @@ export default function ProjectsClient({ projects }: { projects: Project[] }) {
                         </div>
                       )}
                       <div className="absolute top-3 left-3 px-2 py-1 bg-[var(--bg-primary)]/80 border border-[var(--border-color)] rounded text-[8px] tracking-widest text-[var(--accent-purple)] uppercase">
-                        {project.category}
+                        {formatProjectCategoryLabel(project.category)}
                       </div>
                       {/* Shimmer on hover */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--accent-cyan)]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
