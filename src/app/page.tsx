@@ -156,9 +156,7 @@ export default function HomePage() {
       .then((data) => {
         const uniqueProjects = dedupeProjects(data as ProjectRecord[]);
         const featured = uniqueProjects.filter((p) => p.featured).slice(0, 3);
-        const fallback =
-          featured.length > 0 ? featured : uniqueProjects.slice(0, 3);
-        setProjects(fallback);
+        setProjects(featured);
       })
       .catch(() => {});
   }, []);
@@ -307,30 +305,31 @@ export default function HomePage() {
       <div className="section-divider" />
 
       {/* Featured Projects Section */}
-      <section className="relative z-10 py-20">
-        <div className="max-w-7xl mx-auto px-6 space-y-12">
-          <ScrollReveal>
-            <div className="flex items-end justify-between">
-              <div className="space-y-2">
-                <p className="text-xs tracking-[0.3em] text-[var(--accent-purple)]">
-                  // FEATURED_EXPERIMENTS
-                </p>
-                <h2 className="text-2xl md:text-4xl font-bold">
-                  SELECT <span className="gradient-text">PROJECTS</span>
-                </h2>
-              </div>
-              <Link
-                href="/projects"
-                className="hidden sm:block text-xs tracking-widest text-[var(--accent-cyan)] hover:underline underline-offset-4"
-              >
-                VIEW ALL →
-              </Link>
-            </div>
-          </ScrollReveal>
+      {projects.length > 0 && (
+        <>
+          <section className="relative z-10 py-20">
+            <div className="max-w-7xl mx-auto px-6 space-y-12">
+              <ScrollReveal>
+                <div className="flex items-end justify-between">
+                  <div className="space-y-2">
+                    <p className="text-xs tracking-[0.3em] text-[var(--accent-purple)]">
+                      // FEATURED_EXPERIMENTS
+                    </p>
+                    <h2 className="text-2xl md:text-4xl font-bold">
+                      SELECT <span className="gradient-text">PROJECTS</span>
+                    </h2>
+                  </div>
+                  <Link
+                    href="/projects"
+                    className="hidden sm:block text-xs tracking-widest text-[var(--accent-cyan)] hover:underline underline-offset-4"
+                  >
+                    VIEW ALL →
+                  </Link>
+                </div>
+              </ScrollReveal>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {projects.length > 0
-              ? projects.map((project, i) => (
+              <div className="grid md:grid-cols-3 gap-6">
+                {projects.map((project, i) => (
                   <ScrollReveal
                     key={project.id}
                     delay={i * 0.15}
@@ -374,27 +373,23 @@ export default function HomePage() {
                       </div>
                     </TiltCard>
                   </ScrollReveal>
-                ))
-              : [1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] h-72 animate-pulse"
-                  />
                 ))}
-          </div>
+              </div>
 
-          <ScrollReveal className="text-center sm:hidden">
-            <Link
-              href="/projects"
-              className="text-xs tracking-widest text-[var(--accent-cyan)] hover:underline underline-offset-4"
-            >
-              VIEW ALL PROJECTS →
-            </Link>
-          </ScrollReveal>
-        </div>
-      </section>
+              <ScrollReveal className="text-center sm:hidden">
+                <Link
+                  href="/projects"
+                  className="text-xs tracking-widest text-[var(--accent-cyan)] hover:underline underline-offset-4"
+                >
+                  VIEW ALL PROJECTS →
+                </Link>
+              </ScrollReveal>
+            </div>
+          </section>
 
-      <div className="section-divider" />
+          <div className="section-divider" />
+        </>
+      )}
 
       {/* Stats Banner */}
       <section className="relative z-10 py-16">

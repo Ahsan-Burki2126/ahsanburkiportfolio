@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import ScrollReveal from "@/components/ScrollReveal";
 import GlitchText from "@/components/GlitchText";
@@ -24,29 +24,17 @@ export default function ProjectsClient({
 }: {
   projects: ProjectRecord[];
 }) {
-  const normalizedProjects = useMemo(() => dedupeProjects(projects), [projects]);
-  const [filter, setFilter] = useState<ProjectFilterValue>(PROJECT_FILTER_TABS[0]);
+  const normalizedProjects = useMemo(
+    () => dedupeProjects(projects),
+    [projects],
+  );
+  const [filter, setFilter] = useState<ProjectFilterValue>(
+    PROJECT_FILTER_TABS[0],
+  );
 
   const filtered = normalizedProjects.filter(
     (project) => resolveProjectCategory(project.category) === filter,
   );
-
-  useEffect(() => {
-    if (normalizedProjects.length === 0) return;
-    const hasResultsForCurrentFilter = normalizedProjects.some(
-      (project) => resolveProjectCategory(project.category) === filter,
-    );
-    if (hasResultsForCurrentFilter) return;
-
-    const firstCategoryWithProjects = PROJECT_FILTER_TABS.find((tab) =>
-      normalizedProjects.some(
-        (project) => resolveProjectCategory(project.category) === tab,
-      ),
-    );
-    if (firstCategoryWithProjects && firstCategoryWithProjects !== filter) {
-      setFilter(firstCategoryWithProjects);
-    }
-  }, [filter, normalizedProjects]);
 
   return (
     <div className="min-h-screen py-20 px-6 relative">
@@ -93,9 +81,6 @@ export default function ProjectsClient({
             <p className="text-[var(--text-secondary)] text-sm">
               No projects found in this category.
             </p>
-            <p className="text-[10px] text-[var(--text-secondary)] mt-2">
-              Projects can be added via the Admin Dashboard.
-            </p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
@@ -103,7 +88,7 @@ export default function ProjectsClient({
               <ScrollReveal key={project.id} delay={index * 0.1}>
                 <TiltCard intensity={5}>
                   <div
-                    className={`border rounded-lg bg-[var(--bg-card)] overflow-hidden group hover:border-[var(--accent-cyan)]/30 transition-all duration-300 ${
+                    className={`border rounded-lg bg-[var(--bg-card)] overflow-hidden group hover:border-[var(--accent-cyan)]/30 transition-all duration-300 h-full flex flex-col ${
                       project.featured
                         ? "border-[var(--accent-cyan)]/30 md:col-span-2"
                         : "border-[var(--border-color)]"
@@ -135,14 +120,16 @@ export default function ProjectsClient({
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 space-y-4">
-                      <h3 className="text-lg font-bold">{project.title}</h3>
-                      <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
+                    <div className="p-6 space-y-4 flex-1 flex flex-col">
+                      <h3 className="text-lg font-bold min-h-14">
+                        {project.title}
+                      </h3>
+                      <p className="text-[var(--text-secondary)] text-sm leading-relaxed h-24 overflow-y-auto pr-1">
                         {project.description}
                       </p>
 
                       {/* Tech stack */}
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 h-16 overflow-y-auto pr-1">
                         {project.techStack.split(",").map((tech) => (
                           <span
                             key={tech}
@@ -154,7 +141,7 @@ export default function ProjectsClient({
                       </div>
 
                       {/* Links */}
-                      <div className="flex gap-3 pt-2">
+                      <div className="flex gap-3 pt-2 mt-auto">
                         {project.liveUrl && (
                           <a
                             href={project.liveUrl}
