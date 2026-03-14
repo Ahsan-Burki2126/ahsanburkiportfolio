@@ -83,6 +83,18 @@ function normalizeText(value: string | null | undefined) {
   return (value || "").trim();
 }
 
+export function normalizeProjectUrl(url: string | null | undefined) {
+  const trimmed = normalizeText(url);
+  if (!trimmed) return null;
+
+  // Accept protocol-less domains like my-app.vercel.app by normalizing to HTTPS.
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
+}
+
 function normalizeIdentityText(value: string | null | undefined) {
   return normalizeText(value).toLowerCase().replace(/\s+/g, " ");
 }

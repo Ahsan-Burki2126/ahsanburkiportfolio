@@ -9,6 +9,7 @@ import {
   dedupeProjects,
   formatProjectCategoryLabel,
   getProjectFilterLabel,
+  normalizeProjectUrl,
   PROJECT_FILTER_TABS,
   resolveProjectCategory,
   type ProjectFilterValue,
@@ -87,84 +88,99 @@ export default function ProjectsClient({
             {filtered.map((project, index) => (
               <ScrollReveal key={project.id} delay={index * 0.1}>
                 <TiltCard intensity={5}>
-                  <div
-                    className={`border rounded-lg bg-[var(--bg-card)] overflow-hidden group hover:border-[var(--accent-cyan)]/30 transition-all duration-300 h-full flex flex-col ${
-                      project.featured
-                        ? "border-[var(--accent-cyan)]/30 md:col-span-2"
-                        : "border-[var(--border-color)]"
-                    }`}
-                  >
-                    {/* Image placeholder */}
-                    <div className="h-48 bg-[var(--bg-secondary)] relative flex items-center justify-center overflow-hidden">
-                      {project.imageUrl ? (
-                        <img
-                          src={project.imageUrl}
-                          alt={project.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="text-[var(--accent-cyan)]/20 text-6xl font-bold group-hover:scale-125 transition-transform duration-500">
-                          {project.title.charAt(0)}
+                  {(() => {
+                    const normalizedLiveUrl = normalizeProjectUrl(
+                      project.liveUrl,
+                    );
+                    return (
+                      <div
+                        className={`border rounded-lg bg-[var(--bg-card)] overflow-hidden group hover:border-[var(--accent-cyan)]/30 transition-all duration-300 h-full flex flex-col ${
+                          project.featured
+                            ? "border-[var(--accent-cyan)]/30 md:col-span-2"
+                            : "border-[var(--border-color)]"
+                        }`}
+                      >
+                        {/* Image placeholder */}
+                        <div className="h-48 bg-[var(--bg-secondary)] relative flex items-center justify-center overflow-hidden">
+                          {normalizedLiveUrl ? (
+                            <iframe
+                              src={normalizedLiveUrl}
+                              title={`${project.title} live preview`}
+                              loading="lazy"
+                              sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                              className="w-full h-full border-0"
+                            />
+                          ) : project.imageUrl ? (
+                            <img
+                              src={project.imageUrl}
+                              alt={project.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-[var(--accent-cyan)]/20 text-6xl font-bold group-hover:scale-125 transition-transform duration-500">
+                              {project.title.charAt(0)}
+                            </div>
+                          )}
+                          {project.featured && (
+                            <div className="absolute top-3 right-3 px-2 py-1 bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 rounded text-[8px] tracking-widest text-[var(--accent-cyan)]">
+                              FEATURED
+                            </div>
+                          )}
+                          <div className="absolute top-3 left-3 px-2 py-1 bg-[var(--bg-primary)]/80 border border-[var(--border-color)] rounded text-[8px] tracking-widest text-[var(--accent-purple)] uppercase">
+                            {formatProjectCategoryLabel(project.category)}
+                          </div>
+                          {/* Shimmer on hover */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--accent-cyan)]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                         </div>
-                      )}
-                      {project.featured && (
-                        <div className="absolute top-3 right-3 px-2 py-1 bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 rounded text-[8px] tracking-widest text-[var(--accent-cyan)]">
-                          FEATURED
+
+                        {/* Content */}
+                        <div className="p-6 space-y-4 flex-1 flex flex-col">
+                          <h3 className="text-lg font-bold min-h-14">
+                            {project.title}
+                          </h3>
+                          <p className="text-[var(--text-secondary)] text-sm leading-relaxed h-24 overflow-y-auto pr-1">
+                            {project.description}
+                          </p>
+
+                          {/* Tech stack */}
+                          <div className="flex flex-wrap gap-2 h-16 overflow-y-auto pr-1">
+                            {project.techStack.split(",").map((tech) => (
+                              <span
+                                key={tech}
+                                className="px-2 py-1 text-[9px] tracking-wider border border-[var(--border-color)] rounded text-[var(--text-secondary)]"
+                              >
+                                {tech.trim()}
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Links */}
+                          <div className="flex gap-3 pt-2 mt-auto">
+                            {normalizedLiveUrl && (
+                              <a
+                                href={normalizedLiveUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 text-[10px] tracking-widest bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] rounded hover:bg-[var(--accent-cyan)]/20 transition-colors"
+                              >
+                                LIVE DEMO →
+                              </a>
+                            )}
+                            {project.repoUrl && (
+                              <a
+                                href={project.repoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 text-[10px] tracking-widest border border-[var(--border-color)] text-[var(--text-secondary)] rounded hover:border-[var(--accent-purple)] hover:text-[var(--accent-purple)] transition-colors"
+                              >
+                                SOURCE CODE
+                              </a>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      <div className="absolute top-3 left-3 px-2 py-1 bg-[var(--bg-primary)]/80 border border-[var(--border-color)] rounded text-[8px] tracking-widest text-[var(--accent-purple)] uppercase">
-                        {formatProjectCategoryLabel(project.category)}
                       </div>
-                      {/* Shimmer on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--accent-cyan)]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-6 space-y-4 flex-1 flex flex-col">
-                      <h3 className="text-lg font-bold min-h-14">
-                        {project.title}
-                      </h3>
-                      <p className="text-[var(--text-secondary)] text-sm leading-relaxed h-24 overflow-y-auto pr-1">
-                        {project.description}
-                      </p>
-
-                      {/* Tech stack */}
-                      <div className="flex flex-wrap gap-2 h-16 overflow-y-auto pr-1">
-                        {project.techStack.split(",").map((tech) => (
-                          <span
-                            key={tech}
-                            className="px-2 py-1 text-[9px] tracking-wider border border-[var(--border-color)] rounded text-[var(--text-secondary)]"
-                          >
-                            {tech.trim()}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* Links */}
-                      <div className="flex gap-3 pt-2 mt-auto">
-                        {project.liveUrl && (
-                          <a
-                            href={project.liveUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 text-[10px] tracking-widest bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] rounded hover:bg-[var(--accent-cyan)]/20 transition-colors"
-                          >
-                            LIVE DEMO →
-                          </a>
-                        )}
-                        {project.repoUrl && (
-                          <a
-                            href={project.repoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 text-[10px] tracking-widest border border-[var(--border-color)] text-[var(--text-secondary)] rounded hover:border-[var(--accent-purple)] hover:text-[var(--accent-purple)] transition-colors"
-                          >
-                            SOURCE CODE
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </TiltCard>
               </ScrollReveal>
             ))}

@@ -9,7 +9,11 @@ import TiltCard from "@/components/TiltCard";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCmsContent } from "@/lib/useContent";
-import { dedupeProjects, type ProjectRecord } from "@/lib/projects";
+import {
+  dedupeProjects,
+  normalizeProjectUrl,
+  type ProjectRecord,
+} from "@/lib/projects";
 
 const Brain3D = dynamic(() => import("@/components/Brain3D"), { ssr: false });
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
@@ -336,41 +340,58 @@ export default function HomePage() {
                     direction="up"
                   >
                     <TiltCard intensity={6}>
-                      <div className="border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] overflow-hidden h-full flex flex-col group hover:border-[var(--accent-cyan)]/30 transition-all duration-300">
-                        <div className="h-40 bg-[var(--bg-secondary)] flex items-center justify-center relative overflow-hidden">
-                          <span className="text-5xl font-bold text-[var(--accent-cyan)]/10 group-hover:scale-125 transition-transform duration-500">
-                            {project.title.charAt(0)}
-                          </span>
-                          <div className="absolute top-3 left-3 px-2 py-1 bg-[var(--bg-primary)]/80 border border-[var(--border-color)] rounded text-[8px] tracking-widest text-[var(--accent-purple)] uppercase">
-                            {project.category}
-                          </div>
-                          {/* Shimmer on hover */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--accent-cyan)]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                        </div>
-                        <div className="p-5 space-y-3 flex-1 flex flex-col">
-                          <h3 className="text-sm font-bold tracking-wide group-hover:text-[var(--accent-cyan)] transition-colors">
-                            {project.title}
-                          </h3>
-                          <p className="text-[var(--text-secondary)] text-xs leading-relaxed flex-1">
-                            {project.description.length > 120
-                              ? project.description.slice(0, 120) + "..."
-                              : project.description}
-                          </p>
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            {project.techStack
-                              .split(",")
-                              .slice(0, 3)
-                              .map((t) => (
-                                <span
-                                  key={t}
-                                  className="px-2 py-0.5 text-[9px] tracking-wider border border-[var(--border-color)] rounded text-[var(--text-secondary)]"
-                                >
-                                  {t.trim()}
+                      {(() => {
+                        const normalizedLiveUrl = normalizeProjectUrl(
+                          project.liveUrl,
+                        );
+                        return (
+                          <div className="border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] overflow-hidden h-full flex flex-col group hover:border-[var(--accent-cyan)]/30 transition-all duration-300">
+                            <div className="h-40 bg-[var(--bg-secondary)] flex items-center justify-center relative overflow-hidden">
+                              {normalizedLiveUrl ? (
+                                <iframe
+                                  src={normalizedLiveUrl}
+                                  title={`${project.title} live preview`}
+                                  loading="lazy"
+                                  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+                                  className="w-full h-full border-0"
+                                />
+                              ) : (
+                                <span className="text-5xl font-bold text-[var(--accent-cyan)]/10 group-hover:scale-125 transition-transform duration-500">
+                                  {project.title.charAt(0)}
                                 </span>
-                              ))}
+                              )}
+                              <div className="absolute top-3 left-3 px-2 py-1 bg-[var(--bg-primary)]/80 border border-[var(--border-color)] rounded text-[8px] tracking-widest text-[var(--accent-purple)] uppercase">
+                                {project.category}
+                              </div>
+                              {/* Shimmer on hover */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--accent-cyan)]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                            </div>
+                            <div className="p-5 space-y-3 flex-1 flex flex-col">
+                              <h3 className="text-sm font-bold tracking-wide group-hover:text-[var(--accent-cyan)] transition-colors">
+                                {project.title}
+                              </h3>
+                              <p className="text-[var(--text-secondary)] text-xs leading-relaxed flex-1">
+                                {project.description.length > 120
+                                  ? project.description.slice(0, 120) + "..."
+                                  : project.description}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5 pt-1">
+                                {project.techStack
+                                  .split(",")
+                                  .slice(0, 3)
+                                  .map((t) => (
+                                    <span
+                                      key={t}
+                                      className="px-2 py-0.5 text-[9px] tracking-wider border border-[var(--border-color)] rounded text-[var(--text-secondary)]"
+                                    >
+                                      {t.trim()}
+                                    </span>
+                                  ))}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
                     </TiltCard>
                   </ScrollReveal>
                 ))}

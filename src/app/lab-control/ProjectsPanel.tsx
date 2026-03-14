@@ -5,6 +5,7 @@ import {
   DEFAULT_PROJECT_CATEGORY,
   dedupeProjects,
   formatProjectCategoryLabel,
+  normalizeProjectUrl,
   normalizeProjectCategory,
   PROJECT_CATEGORY_OPTIONS,
   type ProjectRecord,
@@ -99,6 +100,8 @@ export default function ProjectsPanel({ token }: { token: string }) {
         body: JSON.stringify({
           ...form,
           category: normalizeProjectCategory(form.category),
+          liveUrl: normalizeProjectUrl(form.liveUrl),
+          repoUrl: normalizeProjectUrl(form.repoUrl),
         }),
       });
 
@@ -219,9 +222,10 @@ export default function ProjectsPanel({ token }: { token: string }) {
               LIVE URL
             </label>
             <input
-              type="url"
+              type="text"
               value={form.liveUrl}
               onChange={(e) => setForm({ ...form, liveUrl: e.target.value })}
+              placeholder="https://example.com or my-app.vercel.app"
               className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-sm focus:border-[var(--accent-cyan)] focus:outline-none"
             />
           </div>
@@ -230,9 +234,10 @@ export default function ProjectsPanel({ token }: { token: string }) {
               REPO URL
             </label>
             <input
-              type="url"
+              type="text"
               value={form.repoUrl}
               onChange={(e) => setForm({ ...form, repoUrl: e.target.value })}
+              placeholder="https://github.com/user/repo"
               className="w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-sm focus:border-[var(--accent-cyan)] focus:outline-none"
             />
           </div>
