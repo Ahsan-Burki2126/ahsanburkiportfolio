@@ -6,6 +6,7 @@ import ScrollReveal, { StaggerReveal } from "@/components/ScrollReveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import GlitchText from "@/components/GlitchText";
 import TiltCard from "@/components/TiltCard";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCmsContent } from "@/lib/useContent";
@@ -15,7 +16,6 @@ import {
   type ProjectRecord,
 } from "@/lib/projects";
 
-const Brain3D = dynamic(() => import("@/components/Brain3D"), { ssr: false });
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
   ssr: false,
 });
@@ -236,13 +236,19 @@ export default function HomePage() {
           </ScrollReveal>
         </div>
 
-        {/* Right 3D */}
+        {/* Right Image */}
         <ScrollReveal
           direction="right"
           duration={1.2}
           className="flex-1 h-[400px] md:h-[500px] w-full relative"
         >
-          <Brain3D />
+          <Image
+            src="/Ahsan_.jpeg"
+            alt="Ahsan Burki"
+            fill
+            className="object-cover rounded-lg"
+            priority
+          />
           <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-[var(--accent-cyan)]/30 animate-border-pulse" />
           <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-[var(--accent-cyan)]/30 animate-border-pulse" />
           <div className="absolute bottom-0 left-0 w-8 h-8 border-b border-l border-[var(--accent-cyan)]/30 animate-border-pulse" />
