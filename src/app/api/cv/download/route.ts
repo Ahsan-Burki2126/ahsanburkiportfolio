@@ -1,29 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { readFile, readdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
 import crypto from "crypto";
 
 export async function GET(req: NextRequest) {
   try {
-    const cvDir = path.join(process.cwd(), "uploads", "cv");
+    const profile = await prisma.profile.findUnique({
+      where: { id: "singleton" },
+      select: { cvUrl: true },
+    });
 
-    if (!existsSync(cvDir)) {
+    if (!profile?.cvUrl) {
       return NextResponse.json({ error: "No CV available" }, { status: 404 });
     }
-
-    const files = await readdir(cvDir);
-    const pdfFiles = files.filter((f) => f.endsWith(".pdf"));
-
-    if (pdfFiles.length === 0) {
-      return NextResponse.json({ error: "No CV available" }, { status: 404 });
-    }
-
-    // Get the latest CV file
-    const latestFile = pdfFiles[pdfFiles.length - 1];
-    const filepath = path.join(cvDir, latestFile);
-    const fileBuffer = await readFile(filepath);
 
     // Log download (hash the IP for privacy)
     const forwarded = req.headers.get("x-forwarded-for");
@@ -36,18 +24,12 @@ export async function GET(req: NextRequest) {
 
     await prisma.downloadLog.create({
       data: {
-        filename: latestFile,
+        filename: "Ahsan_Burki_CV.pdf",
         ipHash,
       },
     });
 
-    return new NextResponse(fileBuffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": 'attachment; filename="Ahsan_Burki_CV.pdf"',
-        "Cache-Control": "no-cache",
-      },
-    });
+    return NextResponse.redirect(profile.cvUrl);
   } catch {
     return NextResponse.json({ error: "Download failed" }, { status: 500 });
   }

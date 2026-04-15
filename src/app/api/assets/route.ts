@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
-import crypto from "crypto";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 async function verifyAuth(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -48,7 +45,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file" }, { status: 400 });
     }
 
-    // Validate file type (images only for gallery)
     const allowedTypes = [
       "image/jpeg",
       "image/png",
@@ -67,37 +63,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const hash = crypto
-      .createHash("sha256")
-      .update(buffer)
-      .digest("hex")
-      .slice(0, 12);
-    const ext = file.name.split(".").pop() || "bin";
-    // Sanitize extension
-    const safeExt = ext.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10);
-    const filename = `${category}_${hash}.${safeExt}`;
-
-    const uploadDir = path.join(process.cwd(), "uploads", category);
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    const filepath = path.join(uploadDir, filename);
-    await writeFile(filepath, buffer);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const { url, public_id } = await uploadToCloudinary(buffer, {
+      folder: `portfolio/${category}`,
+      resource_type: file.type === "application/pdf" ? "raw" : "image",
+    });
 
     const asset = await prisma.asset.create({
       data: {
         filename: file.name,
-        filepath,
+        filepath: url,
         fileType: file.type,
         fileSize: file.size,
         category,
       },
     });
 
-    return NextResponse.json(asset, { status: 201 });
+    return NextResponse.json({ ...asset, url, public_id }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Upload failed" }, { status: 500 });
   }

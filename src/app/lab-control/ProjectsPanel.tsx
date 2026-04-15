@@ -40,6 +40,7 @@ export default function ProjectsPanel({ token }: { token: string }) {
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const fetchProjects = useCallback(() => {
     setLoading(true);
@@ -56,24 +57,44 @@ export default function ProjectsPanel({ token }: { token: string }) {
     fetchProjects();
   }, [fetchProjects]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       alert("Please select an image file.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be under 5MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Image must be under 10MB.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setForm((prev) => ({ ...prev, imageUrl: result }));
-      setImagePreview(result);
-    };
-    reader.readAsDataURL(file);
+
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "portfolio/projects");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Upload failed");
+        return;
+      }
+
+      const { url } = await res.json();
+      setForm((prev) => ({ ...prev, imageUrl: url }));
+      setImagePreview(url);
+    } catch {
+      alert("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeImage = () => {
@@ -276,10 +297,11 @@ export default function ProjectsPanel({ token }: { token: string }) {
                 type="file"
                 accept="image/*"
                 onChange={handleImageSelect}
-                className="w-full text-xs text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-[var(--border-color)] file:bg-[var(--bg-secondary)] file:text-[var(--text-secondary)] file:text-[9px] file:tracking-wider file:cursor-pointer hover:file:border-[var(--accent-cyan)] hover:file:text-[var(--accent-cyan)]"
+                disabled={uploading}
+                className="w-full text-xs text-[var(--text-secondary)] file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-[var(--border-color)] file:bg-[var(--bg-secondary)] file:text-[var(--text-secondary)] file:text-[9px] file:tracking-wider file:cursor-pointer hover:file:border-[var(--accent-cyan)] hover:file:text-[var(--accent-cyan)] disabled:opacity-50"
               />
               <p className="text-[9px] text-[var(--text-secondary)]">
-                Max 5MB. JPG, PNG, WebP, GIF.
+                {uploading ? "Uploading to Cloudinary..." : "Max 10MB. JPG, PNG, WebP, GIF."}
               </p>
             </div>
           </div>
