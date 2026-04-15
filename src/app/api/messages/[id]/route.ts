@@ -1,23 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { verifyAuth } from "@/lib/auth";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!(await verifyAuth(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const jwt = await import("jsonwebtoken");
-    jwt.default.verify(
-      authHeader.split(" ")[1],
-      process.env.JWT_SECRET || "fallback-secret",
-    );
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -35,19 +25,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!(await verifyAuth(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const jwt = await import("jsonwebtoken");
-    jwt.default.verify(
-      authHeader.split(" ")[1],
-      process.env.JWT_SECRET || "fallback-secret",
-    );
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
   const { id } = await params;

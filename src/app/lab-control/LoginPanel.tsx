@@ -16,6 +16,7 @@ export default function LoginPanel({
   const [tempToken, setTempToken] = useState("");
   const [qrCode, setQrCode] = useState("");
   const [totpSecret, setTotpSecret] = useState("");
+  const [setupToken, setSetupToken] = useState("");
   const [stage, setStage] = useState<Stage>("credentials");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +53,7 @@ export default function LoginPanel({
         if (setupRes.ok) {
           setQrCode(setupData.qrCode);
           setTotpSecret(setupData.secret);
-          setTempToken(data.token);
+          setSetupToken(data.token);
           setStage("2fa-setup");
         } else {
           setError(setupData.error || "Failed to setup 2FA");
@@ -98,26 +99,14 @@ export default function LoginPanel({
     setError("");
 
     try {
-      // After setup, we need to verify via the 2FA verify endpoint
-      // The tempToken here is a full token (not pending2FA), so we
-      // create a pending token by re-logging in
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      const loginData = await loginRes.json();
-
-      if (!loginRes.ok || !loginData.requires2FA) {
-        setError("Setup error — please try again");
-        return;
-      }
-
-      const res = await fetch("/api/auth/2fa/verify", {
+      // Confirm the secret is valid by verifying the user's first code.
+      // Only after this succeeds is the secret saved to the database.
+      const res = await fetch("/api/auth/2fa/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tempToken: loginData.tempToken,
+          token: setupToken,
+          secret: totpSecret,
           code: totpCode,
         }),
       });

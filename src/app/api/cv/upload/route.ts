@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { uploadToCloudinary } from "@/lib/cloudinary";
-
-async function verifyAuth(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
-  try {
-    const jwt = await import("jsonwebtoken");
-    jwt.default.verify(
-      authHeader.split(" ")[1],
-      process.env.JWT_SECRET || "fallback-secret",
-    );
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { verifyAuth } from "@/lib/auth";
 
 // POST - upload CV (admin only)
 export async function POST(req: NextRequest) {

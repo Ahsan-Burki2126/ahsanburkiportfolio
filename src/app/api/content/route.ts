@@ -1,20 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-async function verifyAuth(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) return false;
-  try {
-    const jwt = await import("jsonwebtoken");
-    jwt.default.verify(
-      authHeader.split(" ")[1],
-      process.env.JWT_SECRET || "fallback-secret",
-    );
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { verifyAuth } from "@/lib/auth";
 
 // GET content - optionally filter by ?page=home or ?key=hero_name
 export async function GET(req: NextRequest) {

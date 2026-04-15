@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import ScrollReveal, { StaggerReveal } from "@/components/ScrollReveal";
 import GlitchText from "@/components/GlitchText";
@@ -10,51 +10,6 @@ import { useCmsContent } from "@/lib/useContent";
 const ParticleField = dynamic(() => import("@/components/ParticleField"), {
   ssr: false,
 });
-
-interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-}
-
-function useCountdown(targetMs: number): TimeLeft {
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
-
-  useEffect(() => {
-    const tick = () => {
-      const diff = targetMs - Date.now();
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-      setTimeLeft({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((diff / (1000 * 60)) % 60),
-        seconds: Math.floor((diff / 1000) % 60),
-      });
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [targetMs]);
-
-  return timeLeft;
-}
-
-const GRAD_DATE_MS = new Date("2026-06-21T00:00:00Z").getTime();
-
-interface EducationInfo {
-  degree: string;
-  gradDate: string;
-  status: string;
-}
 
 interface LanguageItem {
   name: string;
@@ -85,13 +40,6 @@ function renderBioText(text: string) {
 
 export default function AboutPage() {
   const { text, json } = useCmsContent("about");
-  const education = json<EducationInfo>("about_education", {
-    degree: "BS in Artificial Intelligence",
-    gradDate: "2026-06-21T00:00:00Z",
-    status: "IN_PROGRESS",
-  });
-  const gradDateMs = new Date(education.gradDate).getTime() || GRAD_DATE_MS;
-  const countdown = useCountdown(gradDateMs);
   const [scanning, setScanning] = useState(false);
   const scanRef = useRef<HTMLButtonElement>(null);
 
@@ -187,50 +135,6 @@ export default function AboutPage() {
         </ScrollReveal>
 
         {/* Education Card with Countdown */}
-        <ScrollReveal delay={0.15}>
-          <section className="border border-[var(--border-color)] rounded-lg p-6 md:p-8 bg-[var(--bg-card)] glow-border">
-            <h2 className="text-sm tracking-widest text-[var(--accent-cyan)] mb-6">
-              EDUCATION // DEGREE_STATUS
-            </h2>
-            <div className="flex flex-col md:flex-row gap-8 items-start">
-              <div className="flex-1 space-y-3">
-                <h3 className="text-xl font-bold">{education.degree}</h3>
-                <p className="text-[var(--text-secondary)] text-sm">
-                  Expected Graduation:{" "}
-                  {new Date(education.gradDate).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-                <div className="inline-block px-3 py-1 bg-[var(--accent-green)]/10 border border-[var(--accent-green)]/30 rounded text-[var(--accent-green)] text-xs tracking-wider">
-                  STATUS: {education.status}
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-4">
-                {[
-                  { label: "DAYS", value: countdown.days },
-                  { label: "HRS", value: countdown.hours },
-                  { label: "MIN", value: countdown.minutes },
-                  { label: "SEC", value: countdown.seconds },
-                ].map((unit) => (
-                  <div
-                    key={unit.label}
-                    className="text-center border border-[var(--border-color)] rounded p-3 bg-[var(--bg-secondary)]"
-                  >
-                    <p className="text-2xl font-bold text-[var(--accent-cyan)] tabular-nums">
-                      {String(unit.value).padStart(2, "0")}
-                    </p>
-                    <p className="text-[9px] tracking-widest text-[var(--text-secondary)]">
-                      {unit.label}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        </ScrollReveal>
-
         {/* Language Matrix */}
         <ScrollReveal direction="left" delay={0.1}>
           <section className="border border-[var(--border-color)] rounded-lg p-6 md:p-8 bg-[var(--bg-card)]">

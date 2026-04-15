@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { verifyAuth } from "@/lib/auth";
 
 // POST - create message from contact form
 export async function POST(req: NextRequest) {
@@ -14,13 +15,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }
 
-    // Limit field lengths to prevent abuse
     if (name.length > 200 || email.length > 200 || message.length > 5000) {
       return NextResponse.json({ error: "Input too long" }, { status: 400 });
     }
@@ -44,19 +43,8 @@ export async function POST(req: NextRequest) {
 
 // GET - list messages (admin only)
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!(await verifyAuth(req))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const jwt = await import("jsonwebtoken");
-    jwt.default.verify(
-      authHeader.split(" ")[1],
-      process.env.JWT_SECRET || "fallback-secret",
-    );
-  } catch {
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
   const messages = await prisma.message.findMany({
