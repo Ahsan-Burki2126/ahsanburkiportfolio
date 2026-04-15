@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import ProjectsClient from "./ProjectsClient";
 import { dedupeProjects, type ProjectRecord } from "@/lib/projects";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60; // revalidate in background every 60 seconds
 
 export const metadata: Metadata = {
   title: "Projects",
