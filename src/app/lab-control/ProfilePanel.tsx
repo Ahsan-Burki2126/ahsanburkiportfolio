@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 
 interface Profile {
@@ -23,6 +23,7 @@ export default function ProfilePanel({ token }: { token: string }) {
   const [heroImageUrl, setHeroImageUrl] = useState<string>("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageSaved, setImageSaved] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProfile = useCallback(() => {
     setLoading(true);
@@ -74,7 +75,23 @@ export default function ProfilePanel({ token }: { token: string }) {
       setImageSaved(true);
       setTimeout(() => setImageSaved(false), 2000);
     }
+    // Reset input so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setUploadingImage(false);
+  };
+
+  const handleRemoveImage = async () => {
+    setHeroImageUrl("");
+    await fetch("/api/content", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ key: "hero_image_url", value: "" }),
+    });
+    setImageSaved(true);
+    setTimeout(() => setImageSaved(false), 2000);
   };
 
   const handleSave = async () => {
@@ -142,9 +159,10 @@ export default function ProfilePanel({ token }: { token: string }) {
           <div className="space-y-2">
             <label className="block">
               <span className="px-4 py-2 bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] text-[10px] tracking-widest rounded hover:bg-[var(--accent-cyan)]/20 transition-colors cursor-pointer">
-                {uploadingImage ? "UPLOADING..." : "UPLOAD PHOTO"}
+                {uploadingImage ? "UPLOADING..." : heroImageUrl ? "CHANGE PHOTO" : "UPLOAD PHOTO"}
               </span>
               <input
+                ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 className="hidden"
@@ -152,6 +170,15 @@ export default function ProfilePanel({ token }: { token: string }) {
                 disabled={uploadingImage}
               />
             </label>
+            {heroImageUrl && (
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="block px-4 py-2 border border-red-500/30 text-red-400 text-[10px] tracking-widest rounded hover:bg-red-500/10 transition-colors"
+              >
+                REMOVE IMAGE
+              </button>
+            )}
             <p className="text-[9px] text-[var(--text-secondary)] tracking-wider">
               Uploads to Cloudinary. Recommended: square, min 600×600px.
             </p>
