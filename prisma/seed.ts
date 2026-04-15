@@ -123,7 +123,7 @@ async function main() {
     },
     {
       key: "home_hero_title",
-      value: "AI SYSTEMS ARCHITECT",
+      value: "AI Engineer & Full-Stack Developer",
       type: "text",
       page: "home",
       label: "Hero Title",
@@ -223,22 +223,25 @@ async function main() {
       key: "home_testimonials",
       value: JSON.stringify([
         {
-          name: "Dr. Ahmad Shah",
-          role: "AI Research Supervisor",
-          text: "Ahsan's work on intelligent agents demonstrates a rare combination of technical depth and creative vision. His projects consistently push boundaries.",
-          initials: "AS",
+          name: "[Colleague or Supervisor Name]",
+          role: "[Their Role], [Company]",
+          text: "Replace this with a real quote from someone you've worked with. Ask a classmate, professor, or anyone you've collaborated with on a project.",
+          initials: "??",
+          linkedIn: "",
         },
         {
-          name: "Sara Khan",
-          role: "Senior Developer, TechCorp",
-          text: "One of the most talented full-stack developers I've worked with. His attention to detail and clean architecture is exceptional.",
-          initials: "SK",
+          name: "[Colleague or Supervisor Name]",
+          role: "[Their Role], [Company]",
+          text: "Replace this with a real quote. A genuine one-sentence recommendation from a real person is worth more than a paragraph from an unknown name.",
+          initials: "??",
+          linkedIn: "",
         },
         {
-          name: "Rizwan Ali",
-          role: "Project Lead, StartupPK",
-          text: "Ahsan delivered SafarDost ahead of schedule with features we hadn't even thought of. A true innovator from Waziristan.",
-          initials: "RA",
+          name: "[Colleague or Supervisor Name]",
+          role: "[Their Role], [Company]",
+          text: "Replace this with a real quote. Add their LinkedIn URL so recruiters can verify. Edit all three cards in the admin dashboard under Content → Home Page.",
+          initials: "??",
+          linkedIn: "",
         },
       ]),
       type: "json",
@@ -585,7 +588,7 @@ async function main() {
     // ===== CONTACT PAGE =====
     {
       key: "contact_page_title",
-      value: "ESTABLISH CONTACT",
+      value: "GET IN TOUCH",
       type: "text",
       page: "contact",
       label: "Page Title",
@@ -593,10 +596,17 @@ async function main() {
     {
       key: "contact_page_description",
       value:
-        "Open a secure communication channel. All transmissions are encrypted and stored safely.",
+        "Open to work, collaborations, and interesting projects. I usually respond within 24 hours.",
       type: "text",
       page: "contact",
       label: "Page Description",
+    },
+    {
+      key: "contact_email",
+      value: "ahsanburki1819@gmail.com",
+      type: "text",
+      page: "contact",
+      label: "Contact Email (shown publicly)",
     },
     {
       key: "contact_location",
@@ -634,7 +644,7 @@ async function main() {
     {
       key: "footer_bio",
       value:
-        "AI Systems Architect building intelligent agents and immersive digital experiences from Waziristan to the world.",
+        "AI Engineer & Full-Stack Developer building intelligent agents and immersive digital experiences from Waziristan to the world.",
       type: "text",
       page: "global",
       label: "Footer Bio",

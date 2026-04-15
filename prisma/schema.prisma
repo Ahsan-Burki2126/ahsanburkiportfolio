@@ -14,6 +14,7 @@ model Profile {
   degree      String   @default("BS in Artificial Intelligence")
   gradDate    DateTime @default("2026-06-21T00:00:00.000Z")
   cvUrl       String?
+  imageUrl    String?
   germanLevel String   @default("A2")
   bio         String   @default("")
   createdAt   DateTime @default(now())

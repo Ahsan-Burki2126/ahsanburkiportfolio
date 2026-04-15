@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useCmsContent } from "@/lib/useContent";
 
 const navLinks = [
   { href: "/", label: "HOME", code: "00" },
@@ -13,9 +14,34 @@ const navLinks = [
   { href: "/contact", label: "CONTACT", code: "05" },
 ];
 
+interface SocialLink {
+  label: string;
+  href: string;
+  icon: string;
+}
+
+const defaultSocialLinks: SocialLink[] = [
+  { label: "GitHub", href: "https://github.com/Ahsan-Burki2126", icon: "GH" },
+  {
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/ahsan-ullah-burki-25496930b/",
+    icon: "LI",
+  },
+];
+
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { json } = useCmsContent("global");
+
+  const allSocialLinks = json<SocialLink[]>(
+    "footer_social_links",
+    defaultSocialLinks,
+  );
+  // Only show GitHub and LinkedIn in the navbar
+  const navSocialLinks = allSocialLinks.filter((s) =>
+    ["GitHub", "LinkedIn"].includes(s.label),
+  );
 
   if (pathname?.startsWith("/lab-control")) return null;
 
@@ -54,10 +80,24 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Status indicator */}
-        <div className="hidden md:flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-          <div className="w-2 h-2 rounded-full bg-[var(--accent-green)] animate-pulse" />
-          SYSTEM ACTIVE
+        {/* Social icons + status */}
+        <div className="hidden md:flex items-center gap-3">
+          {navSocialLinks.map((social) => (
+            <a
+              key={social.label}
+              href={social.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={social.label}
+              className="w-8 h-8 border border-[var(--border-color)] rounded flex items-center justify-center text-[10px] font-bold text-[var(--text-secondary)] hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] hover:bg-[var(--accent-cyan)]/5 transition-all"
+            >
+              {social.icon}
+            </a>
+          ))}
+          <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] pl-2 border-l border-[var(--border-color)]">
+            <div className="w-2 h-2 rounded-full bg-[var(--accent-green)] animate-pulse" />
+            OPEN TO WORK
+          </div>
         </div>
 
         {/* Mobile hamburger */}
@@ -101,6 +141,19 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
+          <div className="flex gap-3 px-6 py-3">
+            {navSocialLinks.map((social) => (
+              <a
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 border border-[var(--border-color)] rounded flex items-center justify-center text-[10px] font-bold text-[var(--text-secondary)] hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] transition-all"
+              >
+                {social.icon}
+              </a>
+            ))}
+          </div>
         </div>
       )}
     </nav>

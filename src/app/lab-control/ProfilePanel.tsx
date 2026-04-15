@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 
 interface Profile {
   id: string;
@@ -9,6 +10,7 @@ interface Profile {
   degree: string;
   gradDate: string;
   cvUrl: string | null;
+  imageUrl: string | null;
   germanLevel: string;
   bio: string;
 }
@@ -19,6 +21,30 @@ export default function ProfilePanel({ token }: { token: string }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+    setUploadingImage(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    if (res.ok) {
+      const { url } = await res.json();
+      const updated = { ...profile, imageUrl: url };
+      setProfile(updated);
+      await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ imageUrl: url }),
+      });
+    }
+    setUploadingImage(false);
+  };
 
   const fetchProfile = useCallback(() => {
     setLoading(true);
@@ -70,6 +96,29 @@ export default function ProfilePanel({ token }: { token: string }) {
       <h2 className="text-sm tracking-widest text-[var(--accent-purple)]">
         PROFILE EDITOR
       </h2>
+
+      {/* Hero Image Upload */}
+      <div className="border border-[var(--border-color)] rounded-lg p-6 bg-[var(--bg-card)] space-y-4">
+        <h3 className="text-[10px] tracking-widest text-[var(--accent-cyan)]">HERO IMAGE</h3>
+        <div className="flex items-center gap-6">
+          <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] flex-shrink-0">
+            {profile.imageUrl ? (
+              <Image src={profile.imageUrl} alt="Hero" fill className="object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[var(--text-secondary)] text-xs">NO IMAGE</div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <label className="block">
+              <span className="px-4 py-2 bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] text-[10px] tracking-widest rounded hover:bg-[var(--accent-cyan)]/20 transition-colors cursor-pointer">
+                {uploadingImage ? "UPLOADING..." : "UPLOAD PHOTO"}
+              </span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploadingImage} />
+            </label>
+            <p className="text-[9px] text-[var(--text-secondary)] tracking-wider">Uploads to Cloudinary. Recommended: square, min 600×600px.</p>
+          </div>
+        </div>
+      </div>
 
       <div className="border border-[var(--border-color)] rounded-lg p-6 bg-[var(--bg-card)] space-y-5">
         <div className="grid md:grid-cols-2 gap-4">

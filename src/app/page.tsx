@@ -6,6 +6,7 @@ import ScrollReveal, { StaggerReveal } from "@/components/ScrollReveal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import GlitchText from "@/components/GlitchText";
 import TiltCard from "@/components/TiltCard";
+import ProjectThumbnail from "@/components/ProjectThumbnail";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -40,6 +41,7 @@ interface Testimonial {
   role: string;
   text: string;
   initials: string;
+  linkedIn?: string;
 }
 
 const defaultTestimonials: Testimonial[] = [
@@ -96,6 +98,7 @@ const defaultProcessSteps: ProcessStep[] = [
 
 export default function HomePage() {
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const { text, json } = useCmsContent("home");
 
   const testimonials = json<Testimonial[]>(
@@ -163,6 +166,10 @@ export default function HomePage() {
         setProjects(featured);
       })
       .catch(() => {});
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((data) => { if (data.imageUrl) setHeroImageUrl(data.imageUrl); })
+      .catch(() => {});
   }, []);
 
   return (
@@ -207,13 +214,13 @@ export default function HomePage() {
                 href="/projects"
                 className="px-6 py-3 bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] text-xs tracking-widest rounded hover:bg-[var(--accent-cyan)]/20 transition-all animate-shimmer"
               >
-                VIEW EXPERIMENTS →
+                VIEW PROJECTS →
               </Link>
               <Link
                 href="/contact"
                 className="px-6 py-3 border border-[var(--border-color)] text-[var(--text-secondary)] text-xs tracking-widest rounded hover:border-[var(--accent-purple)] hover:text-[var(--accent-purple)] transition-all"
               >
-                OPEN UPLINK
+                GET IN TOUCH
               </Link>
             </div>
           </ScrollReveal>
@@ -243,11 +250,12 @@ export default function HomePage() {
           className="flex-1 h-[400px] md:h-[500px] w-full relative"
         >
           <Image
-            src="/Ahsan_.jpeg"
+            src={heroImageUrl ?? "/Ahsan_.jpeg"}
             alt="Ahsan Burki"
             fill
             className="object-cover rounded-lg"
             priority
+            unoptimized={!!heroImageUrl}
           />
           <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-[var(--accent-cyan)]/30 animate-border-pulse" />
           <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-[var(--accent-cyan)]/30 animate-border-pulse" />
@@ -352,26 +360,11 @@ export default function HomePage() {
                         );
                         return (
                           <div className="border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] overflow-hidden h-full flex flex-col group hover:border-[var(--accent-cyan)]/30 transition-all duration-300">
-                            <div className="h-40 bg-[var(--bg-secondary)] flex items-center justify-center relative overflow-hidden">
-                              {normalizedLiveUrl ? (
-                                <iframe
-                                  src={normalizedLiveUrl}
-                                  title={`${project.title} live preview`}
-                                  loading="lazy"
-                                  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
-                                  className="w-full h-full border-0"
-                                />
-                              ) : (
-                                <span className="text-5xl font-bold text-[var(--accent-cyan)]/10 group-hover:scale-125 transition-transform duration-500">
-                                  {project.title.charAt(0)}
-                                </span>
-                              )}
-                              <div className="absolute top-3 left-3 px-2 py-1 bg-[var(--bg-primary)]/80 border border-[var(--border-color)] rounded text-[8px] tracking-widest text-[var(--accent-purple)] uppercase">
-                                {project.category}
-                              </div>
-                              {/* Shimmer on hover */}
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--accent-cyan)]/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                            </div>
+                            <ProjectThumbnail
+                              project={project}
+                              liveUrl={normalizedLiveUrl}
+                              height="h-40"
+                            />
                             <div className="p-5 space-y-3 flex-1 flex flex-col">
                               <h3 className="text-sm font-bold tracking-wide group-hover:text-[var(--accent-cyan)] transition-colors">
                                 {project.title}
@@ -451,7 +444,7 @@ export default function HomePage() {
           <ScrollReveal>
             <div className="space-y-2 text-center">
               <p className="text-xs tracking-[0.3em] text-[var(--accent-purple)]">
-                // SIGNAL_INTERCEPTS
+                // TESTIMONIALS
               </p>
               <h2 className="text-2xl md:text-4xl font-bold">
                 WHAT THEY <span className="gradient-text">SAY</span>
@@ -469,12 +462,12 @@ export default function HomePage() {
                       &ldquo;{t.text}&rdquo;
                     </p>
                     <div className="flex items-center gap-3 mt-5 pt-4 border-t border-[var(--border-color)]">
-                      <div className="w-9 h-9 rounded-full border border-[var(--accent-cyan)]/30 bg-[var(--accent-cyan)]/5 flex items-center justify-center group-hover:border-[var(--accent-cyan)] transition-colors">
+                      <div className="w-9 h-9 rounded-full border border-[var(--accent-cyan)]/30 bg-[var(--accent-cyan)]/5 flex items-center justify-center group-hover:border-[var(--accent-cyan)] transition-colors shrink-0">
                         <span className="text-[10px] font-bold text-[var(--accent-cyan)]">
                           {t.initials}
                         </span>
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-[var(--text-primary)]">
                           {t.name}
                         </p>
@@ -482,6 +475,16 @@ export default function HomePage() {
                           {t.role}
                         </p>
                       </div>
+                      {t.linkedIn && (
+                        <a
+                          href={t.linkedIn}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 px-2 py-1 text-[8px] tracking-widest border border-[var(--accent-cyan)]/20 text-[var(--accent-cyan)]/60 rounded hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)] transition-colors"
+                        >
+                          LI
+                        </a>
+                      )}
                     </div>
                   </div>
                 </TiltCard>
@@ -535,13 +538,13 @@ export default function HomePage() {
                   href="/contact"
                   className="px-8 py-3 bg-[var(--accent-cyan)]/10 border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] text-xs tracking-[0.3em] rounded hover:bg-[var(--accent-cyan)]/20 transition-all"
                 >
-                  OPEN UPLINK →
+                  GET IN TOUCH →
                 </Link>
                 <Link
                   href="/experience"
                   className="px-8 py-3 border border-[var(--border-color)] text-[var(--text-secondary)] text-xs tracking-[0.3em] rounded hover:border-[var(--accent-purple)] hover:text-[var(--accent-purple)] transition-all"
                 >
-                  VIEW JOURNEY
+                  VIEW EXPERIENCE
                 </Link>
               </div>
             </div>
