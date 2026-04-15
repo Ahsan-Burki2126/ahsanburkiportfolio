@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 
-type Stage = "credentials" | "2fa-verify" | "2fa-setup";
+type Stage = "credentials" | "2fa-verify" | "2fa-setup" | "2fa-email";
 
 export default function LoginPanel({
   onLogin,
@@ -13,10 +13,13 @@ export default function LoginPanel({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [totpCode, setTotpCode] = useState("");
+  const [emailCode, setEmailCode] = useState("");
   const [tempToken, setTempToken] = useState("");
   const [qrCode, setQrCode] = useState("");
   const [totpSecret, setTotpSecret] = useState("");
   const [setupToken, setSetupToken] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState("");
   const [stage, setStage] = useState<Stage>("credentials");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,7 +46,6 @@ export default function LoginPanel({
         setTempToken(data.tempToken);
         setStage("2fa-verify");
       } else if (data.needs2FASetup) {
-        // First login — set up 2FA
         const setupRes = await fetch("/api/auth/2fa/setup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -93,14 +95,59 @@ export default function LoginPanel({
     }
   };
 
+  const handleSendEmailOtp = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/2fa/email-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tempToken, action: "send" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setEmailSent(true);
+        setSentToEmail(data.email || "");
+        setStage("2fa-email");
+      } else {
+        setError(data.error || "Failed to send email code");
+      }
+    } catch {
+      setError("Connection failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/2fa/email-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tempToken, code: emailCode }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onLogin(data.token);
+      } else {
+        setError(data.error || "Invalid code");
+      }
+    } catch {
+      setError("Connection failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSetupComplete = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      // Confirm the secret is valid by verifying the user's first code.
-      // Only after this succeeds is the secret saved to the database.
       const res = await fetch("/api/auth/2fa/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,6 +171,14 @@ export default function LoginPanel({
     }
   };
 
+  const backToCredentials = () => {
+    setStage("credentials");
+    setTotpCode("");
+    setEmailCode("");
+    setEmailSent(false);
+    setError("");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-6">
       <div className="w-full max-w-sm">
@@ -139,6 +194,7 @@ export default function LoginPanel({
               {stage === "credentials" && "AUTHENTICATION REQUIRED"}
               {stage === "2fa-verify" && "TWO-FACTOR VERIFICATION"}
               {stage === "2fa-setup" && "CONFIGURE 2FA"}
+              {stage === "2fa-email" && "EMAIL VERIFICATION"}
             </p>
           </div>
 
@@ -245,7 +301,7 @@ export default function LoginPanel({
             </form>
           )}
 
-          {/* Stage 3: 2FA Verification (returning login) */}
+          {/* Stage 3: 2FA Verification (authenticator app) */}
           {stage === "2fa-verify" && (
             <form onSubmit={handleVerify2FA} className="space-y-4">
               <p className="text-xs text-[var(--text-secondary)] text-center">
@@ -282,17 +338,99 @@ export default function LoginPanel({
                 {loading ? "VERIFYING..." : "VERIFY"}
               </button>
 
+              {/* Email OTP alternative */}
+              <div className="border-t border-[var(--border-color)] pt-3 space-y-2">
+                <p className="text-[9px] text-[var(--text-secondary)] text-center tracking-wider">
+                  DON&apos;T HAVE YOUR PHONE?
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSendEmailOtp}
+                  disabled={loading}
+                  className="w-full py-2 text-[10px] tracking-widest border border-[var(--accent-cyan)]/30 text-[var(--accent-cyan)] rounded hover:bg-[var(--accent-cyan)]/10 transition-colors disabled:opacity-50"
+                >
+                  {loading ? "SENDING..." : "SEND CODE TO MY EMAIL"}
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => {
-                  setStage("credentials");
-                  setTotpCode("");
-                  setError("");
-                }}
+                onClick={backToCredentials}
                 className="w-full py-2 text-[10px] text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] transition-colors tracking-wider"
               >
                 BACK TO LOGIN
               </button>
+            </form>
+          )}
+
+          {/* Stage 4: Email OTP verification */}
+          {stage === "2fa-email" && (
+            <form onSubmit={handleVerifyEmailOtp} className="space-y-4">
+              <div className="text-center space-y-1">
+                <p className="text-xs text-[var(--text-secondary)]">
+                  A 6-digit code was sent to
+                </p>
+                <p className="text-xs text-[var(--accent-cyan)] font-mono">
+                  {sentToEmail}
+                </p>
+                <p className="text-[9px] text-[var(--text-secondary)]">
+                  Check your inbox and spam. Expires in 10 minutes.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] tracking-widest text-[var(--text-secondary)]">
+                  EMAIL CODE
+                </label>
+                <input
+                  type="text"
+                  value={emailCode}
+                  onChange={(e) =>
+                    setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  required
+                  maxLength={6}
+                  placeholder="000000"
+                  autoFocus
+                  className="w-full px-4 py-3 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-sm text-center tracking-[0.5em] font-mono focus:border-[var(--accent-purple)] focus:outline-none transition-colors"
+                />
+              </div>
+
+              {error && (
+                <p className="text-red-400 text-xs text-center">{error}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || emailCode.length !== 6}
+                className="w-full py-3 bg-[var(--accent-purple)]/10 border border-[var(--accent-purple)]/30 text-[var(--accent-purple)] text-xs tracking-[0.3em] rounded hover:bg-[var(--accent-purple)]/20 transition-all disabled:opacity-50"
+              >
+                {loading ? "VERIFYING..." : "VERIFY"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEmailSent(false);
+                  setEmailCode("");
+                  setError("");
+                  setStage("2fa-verify");
+                }}
+                className="w-full py-2 text-[10px] text-[var(--text-secondary)] hover:text-[var(--accent-cyan)] transition-colors tracking-wider"
+              >
+                USE AUTHENTICATOR APP INSTEAD
+              </button>
+
+              {emailSent && (
+                <button
+                  type="button"
+                  onClick={handleSendEmailOtp}
+                  disabled={loading}
+                  className="w-full py-2 text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors tracking-wider"
+                >
+                  RESEND CODE
+                </button>
+              )}
             </form>
           )}
         </div>

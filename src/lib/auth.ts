@@ -76,6 +76,34 @@ function purgeExpiredCodes(): void {
   }
 }
 
+// ── Email OTP store ───────────────────────────────────────────────────────────
+// 6-digit codes keyed by userId, expire after 10 minutes.
+
+interface EmailOtp {
+  code: string;
+  expiresAt: number;
+}
+
+const emailOtpStore = new Map<string, EmailOtp>();
+
+export function generateEmailOtp(userId: string): string {
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  emailOtpStore.set(userId, { code, expiresAt: Date.now() + 10 * 60_000 });
+  return code;
+}
+
+export function verifyEmailOtp(userId: string, code: string): boolean {
+  const entry = emailOtpStore.get(userId);
+  if (!entry) return false;
+  if (Date.now() > entry.expiresAt) {
+    emailOtpStore.delete(userId);
+    return false;
+  }
+  if (entry.code !== code) return false;
+  emailOtpStore.delete(userId); // single-use
+  return true;
+}
+
 // ── Shared request auth helper ────────────────────────────────────────────────
 
 export async function verifyAuth(req: NextRequest): Promise<boolean> {

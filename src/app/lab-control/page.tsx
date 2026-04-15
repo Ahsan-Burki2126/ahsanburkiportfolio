@@ -18,17 +18,17 @@ export default function LabControlPage() {
   const [activeTab, setActiveTab] = useState<Tab>("stats");
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("admin_token");
+    const saved = localStorage.getItem("admin_token");
     if (saved) setToken(saved);
   }, []);
 
   const handleLogin = useCallback((t: string) => {
-    sessionStorage.setItem("admin_token", t);
+    localStorage.setItem("admin_token", t);
     setToken(t);
   }, []);
 
   const handleLogout = useCallback(() => {
-    sessionStorage.removeItem("admin_token");
+    localStorage.removeItem("admin_token");
     setToken(null);
   }, []);
 
