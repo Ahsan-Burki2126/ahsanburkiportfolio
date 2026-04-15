@@ -8,7 +8,7 @@ async function main() {
   const hashedPassword = await bcrypt.hash("Ahsan@1234@admin##", 12);
   await prisma.adminUser.upsert({
     where: { username: "ahsanburki1819@gmail.com" },
-    update: { password: hashedPassword },
+    update: {}, // never overwrite password on re-seed
     create: {
       username: "ahsanburki1819@gmail.com",
       password: hashedPassword,
@@ -641,6 +641,13 @@ async function main() {
     },
 
     // ===== FOOTER / GLOBAL =====
+    {
+      key: "hero_image_url",
+      value: "",
+      type: "text",
+      page: "global",
+      label: "Hero Image URL (Cloudinary)",
+    },
     {
       key: "footer_bio",
       value:

@@ -98,8 +98,8 @@ const defaultProcessSteps: ProcessStep[] = [
 
 export default function HomePage() {
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
-  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const { text, json } = useCmsContent("home");
+  const { text: globalText } = useCmsContent("global");
 
   const testimonials = json<Testimonial[]>(
     "home_testimonials",
@@ -165,10 +165,6 @@ export default function HomePage() {
         const featured = uniqueProjects.filter((p) => p.featured).slice(0, 3);
         setProjects(featured);
       })
-      .catch(() => {});
-    fetch("/api/profile")
-      .then((r) => r.json())
-      .then((data) => { if (data.imageUrl) setHeroImageUrl(data.imageUrl); })
       .catch(() => {});
   }, []);
 
@@ -250,12 +246,12 @@ export default function HomePage() {
           className="flex-1 h-[400px] md:h-[500px] w-full relative"
         >
           <Image
-            src={heroImageUrl ?? "/Ahsan_.jpeg"}
+            src={globalText("hero_image_url", "") || "/Ahsan_.jpeg"}
             alt="Ahsan Burki"
             fill
             className="object-cover rounded-lg"
             priority
-            unoptimized={!!heroImageUrl}
+            unoptimized={!!globalText("hero_image_url", "")}
           />
           <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-[var(--accent-cyan)]/30 animate-border-pulse" />
           <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-[var(--accent-cyan)]/30 animate-border-pulse" />
