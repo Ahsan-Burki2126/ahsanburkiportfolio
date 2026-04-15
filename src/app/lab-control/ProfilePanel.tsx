@@ -55,7 +55,11 @@ export default function ProfilePanel({ token }: { token: string }) {
     setUploadingImage(true);
     const fd = new FormData();
     fd.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd,
+    });
     if (res.ok) {
       const { url } = await res.json();
       setHeroImageUrl(url);
